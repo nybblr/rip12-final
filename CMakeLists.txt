@@ -34,6 +34,8 @@ set ( rip_srcs  tabRipPlannerApp.cpp tabRipPlanner.cpp RRT.cpp PathPlanner.cpp )
 set ( rip_hdrs  tabRipPlanner.h RRT.h PathPlanner.h )
 set ( kdtree_srcs kdtree/kdtree.c )
 set ( kdtree_hdrs kdtree/kdtree.h )
+set ( tooluse_srcs toolUsePlanner.cpp )
+set ( tooluse_hdrs toolUsePlanner.h )
 
 
 if(WIN32)
@@ -50,10 +52,10 @@ if (wxWidgets_FOUND)
   link_directories(${CMAKE_SOURCE_DIR}/lib ${GRIP_LIBDIR} ${WXWIDGETS_SHARED_LIBRARY_DIRS})
 
  if(MSVC)
-  add_executable (tabRipPlanner WIN32 ${rip_srcs} ${rip_hdrs} ${kdtree_srcs} )
+  add_executable (tabRipPlanner WIN32 ${rip_srcs} ${rip_hdrs} ${kdtree_srcs} ${tooluse_srcs} ${tooluse_hdrs})
 	set_target_properties (tabRipPlanner PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
    else()
-  add_executable (tabRipPlanner ${rip_srcs} ${rip_hdrs} ${kdtree_srcs} ${jacobian_src} ${jacobian_hdr})
+  add_executable (tabRipPlanner ${rip_srcs} ${rip_hdrs} ${kdtree_srcs} ${tooluse_srcs} ${tooluse_hdrs} ${jacobian_src} ${jacobian_hdr})
   add_executable (3dmouse ${3dmouse_src} ${3dmouse_hdr})
 endif()
 
