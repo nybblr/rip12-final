@@ -31,6 +31,7 @@ public:
     Eigen::VectorXd mGoalConf;
 
     int mRobotId;
+	int mObjectId;
     Eigen::VectorXi mLinks;
 
     int mRrtStyle;

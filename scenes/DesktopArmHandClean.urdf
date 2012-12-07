@@ -18,15 +18,15 @@
 </entity>
 
 <entity model="bolt">
-	<origin xyz="-1.64 0.789 0" rpy="1.57 0 0"/>
+	<origin xyz=".44 1.18 .81" rpy="0 .61 -5.45"/>
 </entity>
 
 <entity model="block">
-	<origin xyz="-1.64 0.789 0" rpy="1.57 0 0"/>
+	<origin xyz="0 0.24 .87" rpy="89.95 0 0"/>
 </entity>
 
 <entity model="driver">
-	<origin xyz="-1.64 0.789 0" rpy="1.57 0 0"/>
+	<origin xyz="-.71 1.45 .87" rpy="96.08 86.67 0"/>
 </entity>
 
 </world>

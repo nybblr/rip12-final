@@ -72,6 +72,7 @@ ToolUsePlannerTab::ToolUsePlannerTab( wxWindow *parent, const wxWindowID id,
     mGoalConf.resize(0);
 
     mRobotId = 0;
+	mObjectId = 3;
     mLinks.resize(0);
 
     mRrtStyle = 0;
@@ -148,11 +149,11 @@ ToolUsePlannerTab::ToolUsePlannerTab( wxWindow *parent, const wxWindowID id,
 
     // Create sizer for goal buttons in 3rd column
     wxBoxSizer *col3Sizer = new wxBoxSizer(wxVERTICAL);
-    col3Sizer->Add( new wxButton(this, button_SetGoal, wxT("Set &Goal")),
+    col3Sizer->Add( new wxButton(this, button_SetGoal, wxT("Set &Goal Object")),
 		    0, // make horizontally unstretchable
 		    wxALL, // make border all around (implicit top alignment)
 		    1 ); // set border width to 1, so start buttons are close together
-    col3Sizer->Add( new wxButton(this, button_showGoal, wxT("Show G&oal")),
+    col3Sizer->Add( new wxButton(this, button_showGoal, wxT("Show G&oal Object")),
 		    0, // make horizontally unstretchable
 		    wxALL, // make border all around (implicit top alignment)
 		    1 ); // set border width to 1, so start buttons are close together
@@ -249,9 +250,13 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 	std::cout << "(!) Must have a world with a robot to set a Goal state.(!)" << std::endl;
 	break;
       }
-      std::cout << "(i) Setting Goal state for " << mWorld->getRobot(mRobotId)->getName() << ":" << std::endl;
-
-      mGoalConf = mWorld->getRobot(mRobotId)->getQuickDofs();
+      std::cout << "(i) Setting Goal state for " << mWorld->getObject(mObjectId)->getName() << ":" << std::endl;
+	  double x;
+	  double y;
+	  double z;
+	  mWorld->getRobot(mRobotId)->getBodyNodePositionXYZ("SchunkArm", x, y, z);
+	  std::cout << "(i) Goal position " << x << std::endl;
+      //mGoalConf = mWorld->getRobot(mRobotId)->getQuickDofs();
 
       for( unsigned int i = 0; i < mGoalConf.size(); i++ )
 	{ std::cout << mGoalConf(i) << " "; }
