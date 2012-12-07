@@ -1,0 +1,14 @@
+<!-- driver.urdf -->
+
+<object name="driver">
+
+	<link name="link_0">
+		<visual>
+			<geometry>
+				<mesh filename="driver/driver.stl"/>
+			</geometry>
+		</visual>
+	</link>
+
+</object>
+

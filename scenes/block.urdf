@@ -1,0 +1,14 @@
+<!-- block.urdf -->
+
+<object name="block">
+
+	<link name="link_0">
+		<visual>
+			<geometry>
+				<mesh filename="block/block.stl"/>
+			</geometry>
+		</visual>
+	</link>
+
+</object>
+
