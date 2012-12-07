@@ -4,6 +4,8 @@
 <include filename="SchunkArmHand.urdf" model_name="schunk_arm"/>
 <include filename="table2b.urdf" model_name="table2b"/>
 <include filename="bolt.urdf" model_name="bolt"/>
+<include filename="block.urdf" model_name="block"/>
+<include filename="driver.urdf" model_name="driver"/>
 
 <!-- Construct the world -->
 <entity model="schunk_arm" name="SchunkArm">
@@ -16,6 +18,14 @@
 </entity>
 
 <entity model="bolt">
+	<origin xyz="-1.64 0.789 0" rpy="1.57 0 0"/>
+</entity>
+
+<entity model="block">
+	<origin xyz="-1.64 0.789 0" rpy="1.57 0 0"/>
+</entity>
+
+<entity model="driver">
 	<origin xyz="-1.64 0.789 0" rpy="1.57 0 0"/>
 </entity>
 
