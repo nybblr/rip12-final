@@ -1,0 +1,14 @@
+<!-- bolt.urdf -->
+
+<object name="bolt">
+
+	<link name="link_0">
+		<visual>
+			<geometry>
+				<mesh filename="bolt/bolt.stl"/>
+			</geometry>
+		</visual>
+	</link>
+
+</object>
+
