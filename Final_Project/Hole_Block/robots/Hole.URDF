@@ -1,0 +1,43 @@
+<robot
+  name="Hole">
+  <link
+    name="Hole_Block">
+    <inertial>
+      <origin
+        xyz="0.0762 -0.048345 0.0508"
+        rpy="0 0 0" />
+      <mass
+        value="1.5983" />
+      <inertia
+        ixx="0.00293879379942676"
+        ixy="9.03614748130888E-20"
+        ixz="-2.83895127205562E-19"
+        iyy="1.02331887859578E-19"
+        iyz="-0.00461347716271573"
+        izz="4.68849846635175E-19" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="1.5707963267949 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Hole_Block/meshes/Hole_Block.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.0078431 0.51373 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="1.5707963267949 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Hole_Block/meshes/Hole_Block.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

@@ -1,0 +1,43 @@
+<robot
+  name="HexHead">
+  <link
+    name="Hex_Driver">
+    <inertial>
+      <origin
+        xyz="-0.031945 -1.4081E-19 -5.1896E-18"
+        rpy="0 0 0" />
+      <mass
+        value="0.24673" />
+      <inertia
+        ixx="6.55677080737438E-05"
+        ixy="8.43891567006926E-20"
+        ixz="4.12662367793035E-21"
+        iyy="3.98658913849333E-20"
+        iyz="-0.000651397541847561"
+        izz="3.99046654761467E-20" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="1.5707963267949 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Hex_Driver/meshes/Hex_Driver.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 0 0 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="1.5707963267949 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Hex_Driver/meshes/Hex_Driver.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

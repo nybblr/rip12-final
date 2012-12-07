@@ -1,0 +1,43 @@
+<robot
+  name="Bolt">
+  <link
+    name="Hex_Bolt">
+    <inertial>
+      <origin
+        xyz="-6.1533E-20 -0.084376 5.28953928550585E-18"
+        rpy="0 0 0" />
+      <mass
+        value="0.090665" />
+      <inertia
+        ixx="0.000191769368048664"
+        ixy="-1.76098997594297E-22"
+        ixz="-1.16454799699107E-21"
+        iyy="1.11334505521032E-20"
+        iyz="-1.56715103069334E-05"
+        izz="1.5682203317348E-21" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="1.5707963267949 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Hex_Bolt/meshes/Hex_Bolt.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.64706 0.61961 0.58824 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="1.5707963267949 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Hex_Bolt/meshes/Hex_Bolt.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>
