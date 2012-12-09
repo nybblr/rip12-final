@@ -29,13 +29,13 @@
 // Control IDs (used for event handling - be sure to start with a non-conflicted id)
 enum planTabEvents {
 	button_SetStart = 50,
-	button_SetGoal,
-	button_showStart,
-	button_showGoal,
+	button_goToObject,
+	button_pickUpObject,
+	button_dropOffObject,
 	button_resetPlanner,
 	button_empty1,
 	button_empty2,
-	button_Plan,
+	button_incrementObject,
 	button_Stop,
 	button_UpdateTime,
 	button_ExportSequence,
@@ -132,7 +132,7 @@ ToolUsePlannerTab::ToolUsePlannerTab( wxWindow *parent, const wxWindowID id,
 		    0, // make horizontally unstretchable
 		    wxALL, // make border all around (implicit top alignment)
 		    1 ); // set border width to 1, so start buttons are close together
-    col2Sizer->Add( new wxButton(this, button_showStart, wxT("Show S&tart")),
+    col2Sizer->Add( new wxButton(this, button_pickUpObject, wxT("Pick Up Object")),
 		    0, // make horizontally unstretchable
 		    wxALL, // make border all around (implicit top alignment)
 		    1 ); // set border width to 1, so start buttons are close together
@@ -149,11 +149,11 @@ ToolUsePlannerTab::ToolUsePlannerTab( wxWindow *parent, const wxWindowID id,
 
     // Create sizer for goal buttons in 3rd column
     wxBoxSizer *col3Sizer = new wxBoxSizer(wxVERTICAL);
-    col3Sizer->Add( new wxButton(this, button_SetGoal, wxT("Set &Goal Object")),
+    col3Sizer->Add( new wxButton(this, button_goToObject, wxT("Go To Object")),
 		    0, // make horizontally unstretchable
 		    wxALL, // make border all around (implicit top alignment)
 		    1 ); // set border width to 1, so start buttons are close together
-    col3Sizer->Add( new wxButton(this, button_showGoal, wxT("Show G&oal Object")),
+    col3Sizer->Add( new wxButton(this, button_dropOffObject, wxT("Drop Off Object")),
 		    0, // make horizontally unstretchable
 		    wxALL, // make border all around (implicit top alignment)
 		    1 ); // set border width to 1, so start buttons are close together
@@ -179,7 +179,7 @@ ToolUsePlannerTab::ToolUsePlannerTab( wxWindow *parent, const wxWindowID id,
     wxStaticBoxSizer* executeBoxSizer = new wxStaticBoxSizer(executeBox, wxVERTICAL);
 
     // Add buttons for "plan", "save movie", and "show path"
-    executeBoxSizer->Add( new wxButton(this, button_Plan, wxT("&Start")),
+    executeBoxSizer->Add( new wxButton(this, button_incrementObject, wxT("Increment Object")),
 	 		  1, // stretch to fit horizontally
 			  wxGROW ); // let it hog all the space in it's column
 
@@ -243,20 +243,15 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
     }
     break;
 
-    /** Set Goal */
-  case button_SetGoal:
+    /** Go To Object */
+  case button_goToObject:
     if ( mWorld != NULL ) {
       if( mWorld->getNumRobots() < 1){
 	std::cout << "(!) Must have a world with a robot to set a Goal state.(!)" << std::endl;
 	break;
       }
       std::cout << "(i) Setting Goal state for " << mWorld->getObject(mObjectId)->getName() << ":" << std::endl;
-	  double x;
-	  double y;
-	  double z;
-	  mWorld->getRobot(mRobotId)->getBodyNodePositionXYZ("SchunkArm", x, y, z);
-	  std::cout << "(i) Goal position " << x << std::endl;
-      //mGoalConf = mWorld->getRobot(mRobotId)->getQuickDofs();
+      mGoalConf = mWorld->getRobot(mRobotId)->getQuickDofs();
 
       for( unsigned int i = 0; i < mGoalConf.size(); i++ )
 	{ std::cout << mGoalConf(i) << " "; }
@@ -266,8 +261,8 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
     }
     break;
 
-    /** Show Start */
-  case button_showStart:
+    /** Pick Up Object */
+  case button_pickUpObject:
     if( mStartConf.size() < 1 ){
       std::cout << "(x) First, set a start configuration" << std::endl;
       break;
@@ -283,8 +278,8 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
     viewer->UpdateCamera();
     break;
 
-    /** Show Goal */
-  case button_showGoal:
+    /** Drop Off Object */
+  case button_dropOffObject:
     if( mGoalConf.size() < 1 ){
       std::cout << "(x) First, set a goal configuration" << std::endl;
       break;
@@ -333,33 +328,16 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
     std::cout << "-- (0) Empty Button to use for whatever you want (0)--" << std::endl;
     break;
 
-    /** Execute Plan */
-  case button_Plan:
+    /** Increment Object ID */
+  case button_incrementObject:
     {
-      if( mGoalConf.size() < 0 ){ std::cout << "(x) Must set a goal" << std::endl; break; }
-      if( mStartConf.size() < 0 ){ std::cout << "(x) Must set a start" << std::endl; break; }
-      if( mWorld == NULL ){ std::cout << "(x) Must load a world" << std::endl; break; }
-      if( mWorld->getNumRobots() < 1){ std::cout << "(x) Must load a world with a robot" << std::endl; break; }
-
-      double stepSize = 0.02;
-
-      mPlanner = new PathPlanner( *mWorld, false, stepSize );
-      //wxThread planThread;
-      //planThread.Create();
-      mLinks = mWorld->getRobot(mRobotId)->getQuickDofsIndices();
-
-      int maxNodes = 50000;
-      bool result = mPlanner->planPath( mRobotId,
-					mLinks,
-					mStartConf,
-					mGoalConf,
-					mRrtStyle,
-					mConnectMode,
-					mGreedyMode,
-					mSmooth,
-					maxNodes );
-      if( result  )
-	{  SetTimeline(); }
+		int numObjects = mWorld->getNumObjects();
+		mObjectId += 1;
+		if (mObjectId == numObjects)
+		{
+			mObjectId = 0;
+		}
+		std::cout << "(i) Selected Object:" << mWorld->getObject(mObjectId)->getName() << std::endl;
     }
     break;
 
