@@ -23,7 +23,7 @@
 #include <string>
 
 #include "JTFollower/JTFollower.h"
-
+#include <Tools/Constants.h>
 
 // Control IDs (used for event handling - be sure to start with a non-conflicted id)
 enum JacobianMouseTabEvents {
@@ -344,7 +344,7 @@ void JacobianMouseTab::OnButton(wxCommandEvent &evt) {
       mTargetRPY.resize(3);
 
       mTargetXYZ << x, y, z;
-      mTargetRPY << r,p,ya;
+      mTargetRPY << DEG2RAD(r),DEG2RAD(p),DEG2RAD(ya);
 
       printf("** Goal XYZ: (%f %f %f) \n", mTargetXYZ(0), mTargetXYZ(1), mTargetXYZ(2) );
       printf("** Goal RPY: (%f %f %f) \n", mTargetRPY(0), mTargetRPY(1), mTargetRPY(2) );

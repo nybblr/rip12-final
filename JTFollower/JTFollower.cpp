@@ -14,6 +14,7 @@
 #include <kinematics/Joint.h>
 #include <kinematics/Dof.h>
 #include "JTFollower.h"
+#include <Tools/Constants.h>
 
 #include <Eigen/LU>
 #include <Eigen/Geometry>
@@ -74,7 +75,7 @@ void JTFollower::init( int _robotId,
 	mRobotId = _robotId;
 	mLinks = _links;
 
-	mMaxIter = 1000;
+	mMaxIter = 5000;
 	mWorkspaceThresh = _res; // An error of half the resolution
 	mEENode = (dynamics::BodyNodeDynamics*) mWorld->getRobot(mRobotId)->getNode( _EEName.c_str() );
 	mEEId = _EEId;
@@ -117,11 +118,8 @@ Eigen::MatrixXd JTFollower::GetPseudoInvJac( Eigen::VectorXd _q ) {
 	//std::cout<< "Jaclin_raw: \n"<< Jaclin << std::endl;
 	Eigen::MatrixXd Jacang = mEENode->getJacobianAngular();
 	//std::cout<< "Jacang_raw: \n"<< Jacang << std::endl;
-
 	Eigen::MatrixXd Jac(Jaclin.rows()*2,Jaclin.cols()); Jac << Jaclin, Jacang;
-
 	//std::cout<< "Jac_raw: \n"<< Jac << std::endl;
-
 	Jac = Jac.topRightCorner( 6, mEENode->getNumDependentDofs() -6 );
 	//std::cout<< "Jac: \n"<< Jac << std::endl;
 
@@ -164,33 +162,33 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();
 
-		std::cout << "Mov Error (raw): " << dMov << std::endl;
-		std::cout << "Mov Error (nor): " << dMov.norm() << std::endl;
+		std::cout << "Mov Error (raw): " << std::endl << dMov << std::endl;
+		std::cout << "Mov Error (nor): " << std::endl << dMov.norm() << std::endl;
 
 		Eigen::MatrixXd Jt = GetPseudoInvJac(_q);
 
-		std::cout << "Jt:" << std::endl << Jt << std::endl;
+		//std::cout << "Jt:" << std::endl << Jt << std::endl;
 
 		//dConfig << Eigen::VectorXd::Zero(_q.size() - Jt.cols()), Jt*dMov;
 		if (Jt.cols() < _q.size()){
-		std::cout << "q.size(): " << _q.size() << std::endl;
-		std::cout << "Jt.cols(): " << Jt.rows() << std::endl;
+		  //std::cout << "q.size(): " << _q.size() << std::endl;
+		//std::cout << "Jt.cols(): " << Jt.rows() << std::endl;
 		  dConfig = (Eigen::VectorXd(_q.size()) << Jt*dMov, Eigen::VectorXd::Zero(_q.size() - Jt.rows())).finished(); // Top row is base, bottom is end effector.
 		}else {
 		  dConfig = (Eigen::VectorXd(_q.size()) << Jt*dMov).finished(); // Top row is base, bottom is end effector.
 		}
-		std::cout << "dConfig:" << std::endl << dConfig << std::endl;
+		//std::cout << "dConfig:" << std::endl << dConfig << std::endl;
 
 
 		if( dConfig.norm() > mConfigStep ) {
 			double n = dConfig.norm();
 			dConfig = dConfig *(mConfigStep/n);
 			//printf("NEW dConfig : %.3f \n", dConfig.norm() );
-			std::cout << "NEW dConfig: " << dConfig << std::endl;
+			//std::cout << "NEW dConfig: " << dConfig << std::endl;
 		}
 
-		std::cout << "dConfig: " << std::endl << dConfig << std::endl;
-		std::cout << "_q: " << _q << std::endl;
+		//std::cout << "dConfig: " << std::endl << dConfig << std::endl;
+		//std::cout << "_q: " << _q << std::endl;
 		_q = _q + dConfig;
 		_workspacePath.push_back( _q );
 
@@ -223,16 +221,16 @@ Eigen::VectorXd JTFollower::GetRPY( Eigen::VectorXd _q ) {
 	mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 	mWorld->getRobot(mRobotId)->update();
 
-	Eigen::MatrixXd qTransformFull = mEENode->getWorldTransform();
-	std::cout << "QTransformFull:" << std::endl << qTransformFull << std::endl;
+	Eigen::MatrixXd qTransform = mEENode->getWorldTransform();
 
-	qTransformFull.conservativeResize(3,3);
-	Eigen::Matrix3d qTransform; qTransform << qTransformFull;
-	std::cout << "QTransform:" << std::endl << qTransform << std::endl;
+	double r,p,y;
+	r = atan2( qTransform(2,1), qTransform(2,2) );
+	p = -asin( qTransform(2,0) );
+	y = atan2( qTransform(1,0), qTransform(0,0) );
 
+	Eigen::VectorXd qRPY(3); qRPY << r,p,y;
 
-	Eigen::VectorXd qRPY(3); qRPY << qTransform.eulerAngles(0,1,2);
-	std::cout << "Euler Angles: " << std::endl << qRPY << std::endl;
+	std::cout << "Euler Angles: " << std::endl << RAD2DEG(r) << RAD2DEG(p) << RAD2DEG(y) << std::endl;
 	return qRPY;
 }
 
