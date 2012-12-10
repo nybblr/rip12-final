@@ -158,12 +158,13 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();
 
-		//std::cout << "Mov Error (raw): " << std::endl << dMov << std::endl;
-		///std::cout << "Mov Error (nor): " << std::endl << dMov.norm() << std::endl;
+		std::cout << "Mov Error (raw): " << std::endl << dMov << std::endl;
+		std::cout << "Mov Error (nor): " << std::endl << dMov.norm() << std::endl;
 
 		Eigen::MatrixXd Jt = GetPseudoInvJac(_q);
 
-		//std::cout << "Jt:" << std::endl << Jt << std::endl;
+		std::cout << "Jt:" << std::endl << Jt << std::endl;
+		//std::cin.get();
 
 		//dConfig << Eigen::VectorXd::Zero(_q.size() - Jt.cols()), Jt*dMov;
 		if (Jt.cols() < _q.size()){
