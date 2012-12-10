@@ -15,14 +15,10 @@
 #include <kinematics/Dof.h>
 #include "JTFollower.h"
 #include <Tools/Constants.h>
-
 #include <Eigen/LU>
 #include <Eigen/Geometry>
-#include "spnav.h"
 #include <fstream>
 
-spnav_event sev;
-std::ifstream mouse_fd;
 
 /**
  * @function JTFollower
@@ -158,7 +154,7 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 
 	iter = 0;
 	//printf("New call to GoToXYZ: dXYZ: %f  \n", dXYZ.norm() );
-	while( dMov.norm() > mWorkspaceThresh && iter < mMaxIter ) {
+	while( dXYZ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();
 
