@@ -91,7 +91,7 @@ std::vector< Eigen::VectorXd > JTFollower::PlanPath( const Eigen::VectorXd &_sta
 	std::vector< Eigen::VectorXd > configPath;
 	Eigen::VectorXd q;
 
-	int numPoints = _workspacePath.size();
+	size_t numPoints = _workspacePath.size();
 
 	//-- Initialize
 	q = _start;
@@ -170,9 +170,15 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 		Eigen::MatrixXd Jt = GetPseudoInvJac(_q);
 
 		std::cout << "Jt:" << std::endl << Jt << std::endl;
-		std::cout << "q.size(): " << _q.size() << std::endl;
+
 		//dConfig << Eigen::VectorXd::Zero(_q.size() - Jt.cols()), Jt*dMov;
-		dConfig = Jt*dMov;
+		if (Jt.cols() < _q.size()){
+		std::cout << "q.size(): " << _q.size() << std::endl;
+		std::cout << "Jt.cols(): " << Jt.rows() << std::endl;
+		  dConfig = (Eigen::VectorXd(_q.size()) << Jt*dMov, Eigen::VectorXd::Zero(_q.size() - Jt.rows())).finished(); // Top row is base, bottom is end effector.
+		}else {
+		  dConfig = (Eigen::VectorXd(_q.size()) << Jt*dMov).finished(); // Top row is base, bottom is end effector.
+		}
 		std::cout << "dConfig:" << std::endl << dConfig << std::endl;
 
 
