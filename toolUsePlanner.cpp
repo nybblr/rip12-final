@@ -20,6 +20,8 @@
 #include <Tabs/AllTabs.h>
 #include <GRIPApp.h>
 
+#include "JTFollower/JTFollower.h"
+
 
 /* Quick intro to adding tabs:
  * 1- Copy template cpp and header files and replace with new class name
