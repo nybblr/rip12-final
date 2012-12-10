@@ -104,8 +104,4 @@ public:
 
 };
 
-bool Open3DMouse();
-bool Close3DMouse();
-Eigen::VectorXd Get3DMouse(Eigen::VectorXd mouse_calibration);
-
 #endif /** _JT_FOLLOWER_H_ */
