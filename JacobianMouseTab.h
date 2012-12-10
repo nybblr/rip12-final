@@ -44,6 +44,7 @@ public:
   Eigen::VectorXd mStartConfig;
   Eigen::VectorXd mGoalConfig;
   Eigen::VectorXd mTargetXYZ;
+  Eigen::VectorXd mTargetRPY;
 
   wxTextCtrl *mTimeText;
 
@@ -55,6 +56,9 @@ public:
   wxTextCtrl *mTargetX_Text;
   wxTextCtrl *mTargetY_Text;
   wxTextCtrl *mTargetZ_Text;
+  wxTextCtrl *mTargetR_Text;
+  wxTextCtrl *mTargetP_Text;
+  wxTextCtrl *mTargetYa_Text;
 
   /// Functions
 

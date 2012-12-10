@@ -20,6 +20,7 @@
 #include <kinematics/Dof.h>
 
 #include <iostream>
+#include <string>
 
 #include "JTFollower/JTFollower.h"
 
@@ -81,16 +82,19 @@ GRIPTab(parent, id, pos, size, style) {
 			  0,  wxALL,  1 );
 
   // Goal settings
-  wxBoxSizer* goalBoxSizer = new wxBoxSizer( wxVERTICAL );
+  wxBoxSizer* goalBoxSizerXYZ = new wxBoxSizer( wxVERTICAL );
+  wxBoxSizer* goalBoxSizerRPY = new wxBoxSizer( wxVERTICAL );
+  configureSBoxSizer->Add( goalBoxSizerXYZ, 1, wxALIGN_NOT, 0 );
+  configureSBoxSizer->Add( goalBoxSizerRPY, 1, wxALIGN_NOT, 0 );
 
-  configureSBoxSizer->Add( goalBoxSizer, 1, wxALIGN_NOT, 0 );
 
-  goalBoxSizer->Add( new wxButton(this, button_Set_Goal, wxT("Set Goal")),
+  goalBoxSizerXYZ->Add( new wxButton(this, button_Set_Goal, wxT("Set Goal")),
 		     0,  wxALL,  1 );
-
+  goalBoxSizerRPY->Add( new wxButton(this, button_Show_Goal, wxT("Show Goal")),
+		     0,  wxALL,  1 );
   // ** Create sizer for Target Position inputs **
-  wxBoxSizer *PosInputSizer = new wxBoxSizer(wxVERTICAL);
-
+  wxBoxSizer *PosInputSizerXYZ = new wxBoxSizer(wxVERTICAL);
+  wxBoxSizer *PosInputSizerRPY = new wxBoxSizer(wxVERTICAL);
   // x
   wxBoxSizer *posX_Sizer = new wxBoxSizer(wxHORIZONTAL);
   wxStaticText *posX_Label = new wxStaticText( this, 1007, wxT("x: ") );
@@ -99,7 +103,7 @@ GRIPTab(parent, id, pos, size, style) {
   posX_Sizer->Add( posX_Label, 0, wxALL, 1 );
   posX_Sizer->Add( mTargetX_Text, 0, wxALL, 1 );
 
-  PosInputSizer->Add( posX_Sizer, 0, wxALL, 1 );
+  PosInputSizerXYZ->Add( posX_Sizer, 0, wxALL, 1 );
 
   // y
   wxBoxSizer *posY_Sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -109,7 +113,7 @@ GRIPTab(parent, id, pos, size, style) {
   posY_Sizer->Add( posY_Label, 0, wxALL, 1 );
   posY_Sizer->Add( mTargetY_Text, 0, wxALL, 1 );
 
-  PosInputSizer->Add( posY_Sizer, 0, wxALL, 1 );
+  PosInputSizerXYZ->Add( posY_Sizer, 0, wxALL, 1 );
 
   // z
   wxBoxSizer *posZ_Sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -119,12 +123,45 @@ GRIPTab(parent, id, pos, size, style) {
   posZ_Sizer->Add( posZ_Label, 0, wxALL, 1 );
   posZ_Sizer->Add( mTargetZ_Text, 0, wxALL, 1 );
 
-  PosInputSizer->Add( posZ_Sizer, 0, wxALL, 1 );
+  PosInputSizerXYZ->Add( posZ_Sizer, 0, wxALL, 1 );
 
-  goalBoxSizer->Add( PosInputSizer, 0,  wxALL,  1 );
+  // r
+  wxBoxSizer *posR_Sizer = new wxBoxSizer(wxHORIZONTAL);
+  wxStaticText *posR_Label = new wxStaticText( this, 1007, wxT("ro: ") );
+  mTargetR_Text = new wxTextCtrl(this,1008,wxT("0.0"), wxDefaultPosition,wxSize(60,20),wxTE_LEFT);
 
-  goalBoxSizer->Add( new wxButton(this, button_Show_Goal, wxT("Show Goal")),
-		     0,  wxALL,  1 );
+  posR_Sizer->Add( posR_Label, 0, wxALL, 1 );
+  posR_Sizer->Add( mTargetR_Text, 0, wxALL, 1 );
+
+  PosInputSizerRPY->Add( posR_Sizer, 0, wxALL, 1 );
+
+  // p
+  wxBoxSizer *posP_Sizer = new wxBoxSizer(wxHORIZONTAL);
+  wxStaticText *posP_Label = new wxStaticText( this, 1007, wxT("pi: ") );
+  mTargetP_Text = new wxTextCtrl(this,1008,wxT("0.0"), wxDefaultPosition,wxSize(60,20),wxTE_LEFT);
+
+  posP_Sizer->Add( posP_Label, 0, wxALL, 1 );
+  posP_Sizer->Add( mTargetP_Text, 0, wxALL, 1 );
+
+  PosInputSizerRPY->Add( posP_Sizer, 0, wxALL, 1 );
+
+  // ya
+  wxBoxSizer *posYa_Sizer = new wxBoxSizer(wxHORIZONTAL);
+  wxStaticText *posYa_Label = new wxStaticText( this, 1007, wxT("ya: ") );
+  mTargetYa_Text = new wxTextCtrl(this,1008,wxT("0.0"), wxDefaultPosition,wxSize(60,20),wxTE_LEFT);
+
+  posYa_Sizer->Add( posYa_Label, 0, wxALL, 1 );
+  posYa_Sizer->Add( mTargetYa_Text, 0, wxALL, 1 );
+
+  PosInputSizerRPY->Add( posYa_Sizer, 0, wxALL, 1 );
+
+  // Done with xyz,rpya
+
+
+  goalBoxSizerXYZ->Add( PosInputSizerXYZ, 0,  wxALL,  1 );
+  goalBoxSizerRPY->Add( PosInputSizerRPY, 0,  wxALL,  1 );
+
+
 
   sizerFullJacobian->Add(configureSBoxSizer, 3, wxEXPAND | wxALL, 6);
 
@@ -167,16 +204,27 @@ void JacobianMouseTab::getLinks() {
 
   mLinks.resize( mNumLinks );
   mLinks =  mWorld->getRobot(mRobotId)->getQuickDofsIndices();
-  int EEDofId = mLinks( mNumLinks - 1 );
-  mEEId = mWorld->getRobot(mRobotId)->getDof( EEDofId )->getJoint()->getChildNode()->getSkelIndex();
-  mEEName =  mWorld->getRobot(mRobotId)->getNode(mEEId)->getName();
+
+  mEEName = "FT";
+  mEEId = -1;
+
+  for( int i = 0; i < mNumLinks; i++){
+    int EEDofId = mLinks( i );
+    int id = mWorld->getRobot(mRobotId)->getDof( EEDofId )->getJoint()->getChildNode()->getSkelIndex();
+    if ( mEEName.compare(mWorld->getRobot(mRobotId)->getNode(id)->getName()) == 0){
+      mEEId = id;
+    }
+  }
+
   std::cout << "Link IDs: " << mLinks.transpose() << std::endl;
-  std::cout << " EE Name: "<<mEEName << std::endl;
+  std::cout << " EE Name: "<<mWorld->getRobot(mRobotId)->getNode(mEEId)->getName() << std::endl;
 
   // Only for Schunk (no hand) -- Comment otherwise
-  mStartHardcode.resize( mNumLinks );
-  mStartHardcode << 0.528,  -1.089,  0.176,  -1.156,  -0.276,  -0.873,  0.000; // -> Pointing down
- // mStartHardcode <<  0.075,  -1.022,  -0.478,  -1.022,  0.000,  -0.854,  0.000 ;
+  //mStartHardcode.resize( mNumLinks );
+  //mStartHardcode << 0.528,  -1.089,  0.176,  -1.156,  -0.276,  -0.873,  0.000; // -> Pointing down
+  // mStartHardcode <<  0.075,  -1.022,  -0.478,  -1.022,  0.000,  -0.854,  0.000 ;
+
+
 
 }
 
@@ -218,6 +266,7 @@ void JacobianMouseTab::OnButton(wxCommandEvent &evt) {
 
     /** Set Start */
   case button_Set_Start:
+    printf("Set start!");
     if ( mWorld != NULL ) {
       if( mWorld->getNumRobots() < 1) {
 	printf( "(!) Must have a world with a robot to set a Start state" );
@@ -286,13 +335,19 @@ void JacobianMouseTab::OnButton(wxCommandEvent &evt) {
       mTargetY_Text->GetValue().ToDouble(&y);
       mTargetZ_Text->GetValue().ToDouble(&z);
 
+      double r; double p; double ya;
+      mTargetR_Text->GetValue().ToDouble(&r);
+      mTargetP_Text->GetValue().ToDouble(&p);
+      mTargetYa_Text->GetValue().ToDouble(&ya);
+
       mTargetXYZ.resize(3);
-      //mTargetXYZ << x, y, z;
-      Open3DMouse();
-      Eigen::VectorXd cal(3); cal << 1,1,1;
-      mTargetXYZ = Get3DMouse(cal);
-      Close3DMouse();
-      printf("** Goal: (%f %f %f) \n", mTargetXYZ(0), mTargetXYZ(1), mTargetXYZ(2) );
+      mTargetRPY.resize(3);
+
+      mTargetXYZ << x, y, z;
+      mTargetRPY << r,p,ya;
+
+      printf("** Goal XYZ: (%f %f %f) \n", mTargetXYZ(0), mTargetXYZ(1), mTargetXYZ(2) );
+      printf("** Goal RPY: (%f %f %f) \n", mTargetRPY(0), mTargetRPY(1), mTargetRPY(2) );
     }
     else
       { printf("(x) No world loaded, I cannot set a goal \n"); }
@@ -348,7 +403,7 @@ void JacobianMouseTab::OnButton(wxCommandEvent &evt) {
       if( mContinueRunning ) {  // In accumulate mode
 	Eigen::VectorXd current = mWorld->getRobot(mRobotId)->getDofs( mLinks ); // current arm position
 
-	 if( jt->GoToXYZ( current, mTargetXYZ, wsPath ) == true){
+	if( jt->GoToXYZR( current, mTargetXYZ, mTargetRPY, wsPath ) == true){
 	   // We have a workspace path now. Lets use it.
 	   printf("Found solution JT! Adding to timeline\n");
 
@@ -363,7 +418,7 @@ void JacobianMouseTab::OnButton(wxCommandEvent &evt) {
 	 }
       }
       else{
-	if( jt->GoToXYZ( start, mTargetXYZ, wsPath ) == true){
+	if( jt->GoToXYZR( start, mTargetXYZ, mTargetRPY, wsPath ) == true){
 	  printf("Found solution JT! \n");
 	  SetTimeline( wsPath ,true);
 	}

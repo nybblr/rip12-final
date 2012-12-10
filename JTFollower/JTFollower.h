@@ -87,7 +87,12 @@ public:
     bool GoToXYZ( Eigen::VectorXd &_q,
 		  Eigen::VectorXd _targetXYZ,
 		  std::vector<Eigen::VectorXd> &_workspacePath );
+    bool GoToXYZR( Eigen::VectorXd &_q,
+		  Eigen::VectorXd _targetXYZ,
+		  Eigen::VectorXd _targetRPY,
+		  std::vector<Eigen::VectorXd> &_workspacePath );
     Eigen::VectorXd GetXYZ( Eigen::VectorXd _q );
+    Eigen::VectorXd GetRPY( Eigen::VectorXd _q );
 
 
 

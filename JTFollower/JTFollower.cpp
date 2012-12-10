@@ -16,6 +16,7 @@
 #include "JTFollower.h"
 
 #include <Eigen/LU>
+#include <Eigen/Geometry>
 #include "spnav.h"
 #include <fstream>
 
@@ -111,54 +112,77 @@ std::vector< Eigen::VectorXd > JTFollower::PlanPath( const Eigen::VectorXd &_sta
  */
 Eigen::MatrixXd JTFollower::GetPseudoInvJac( Eigen::VectorXd _q ) {
 	printf("Num Dependent DOF minus 6D0F is : %d \n", mEENode->getNumDependentDofs() - 6 );
-	Eigen::MatrixXd Jaclin = mEENode->getJacobianLinear().topRightCorner( 3, mLinks.size() );
-	std::cout<< "Jaclin: \n"<<Jaclin << std::endl;
-	Eigen::MatrixXd JaclinT = Jaclin.transpose();
+
+	Eigen::MatrixXd Jaclin = mEENode->getJacobianLinear();
+	std::cout<< "Jaclin_raw: \n"<< Jaclin << std::endl;
+	Eigen::MatrixXd Jacang = mEENode->getJacobianAngular();
+	std::cout<< "Jacang_raw: \n"<< Jacang << std::endl;
+
+	Eigen::MatrixXd Jac(Jaclin.rows()*2,Jaclin.cols()); Jac << Jaclin, Jacang;
+
+	std::cout<< "Jac_raw: \n"<< Jac << std::endl;
+
+	Jac = Jac.topRightCorner( 6, mEENode->getNumDependentDofs() -6 );
+	std::cout<< "Jac: \n"<< Jac << std::endl;
+
+	Eigen::MatrixXd JacT = Jac.transpose();
 	Eigen::MatrixXd Jt;
-	Eigen::MatrixXd JJt = (Jaclin*JaclinT);
+	Eigen::MatrixXd JJt = (Jac*JacT);
 	Eigen::FullPivLU<Eigen::MatrixXd> lu(JJt);
-	Jt = JaclinT*( lu.inverse() );
-	std::cout<< "Jaclin pseudo inverse: \n"<<Jt << std::endl;
+	Jt = JacT*( lu.inverse() );
+	std::cout<< "Jac pseudo inverse: \n"<<Jt << std::endl;
 	return Jt;
 }
+
 
 /**
  * @function GoToXYZ
  */
-bool JTFollower::GoToXYZ( Eigen::VectorXd &_q,
-				Eigen::VectorXd _targetXYZ,
-				std::vector<Eigen::VectorXd> &_workspacePath ) {
+bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
+			   Eigen::VectorXd _targetXYZ,
+			   Eigen::VectorXd _targetRPY,
+			   std::vector<Eigen::VectorXd> &_workspacePath ) {
 
-	Eigen::VectorXd dXYZ;
+
+
+  Eigen::VectorXd dXYZ,dRPY,dMov(6);
 	Eigen::VectorXd dConfig;
+
 	int iter;
 	mWorld->getRobot(mRobotId)->update();
 
 	//-- Initialize
-	dXYZ = ( _targetXYZ - GetXYZ(_q) ); // GetXYZ also updates the config to _q, so Jaclin use an updated value
+	dXYZ = ( _targetXYZ - GetXYZ(_q) ); // GetXYZ also updates the config to _q, so Jac use an updated value
+	dRPY = ( _targetRPY - GetRPY(_q) ); // GetRPY also updates the config to _q, so Jac use an updated value
+	std::cout << "GoToXYZR" << std::endl;
+	dMov << dXYZ,dRPY;
+
 
 	iter = 0;
 	//printf("New call to GoToXYZ: dXYZ: %f  \n", dXYZ.norm() );
 	while( dXYZ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();
-		if(mWorld->checkCollision()) {
-			std::cout << "Collision in GetXYZ, blowing up the coords!" << std::endl;
-			dXYZ = -1000*dXYZ;
-		}
-		printf("XYZ Error: %f \n", dXYZ.norm() );
+
+		std::cout << "Mov Error (raw): " << dMov << std::endl;
+		std::cout << "Mov Error (nor): " << dMov.norm() << std::endl;
 		Eigen::MatrixXd Jt = GetPseudoInvJac(_q);
-		dConfig = Jt*dXYZ;
-		printf("dConfig : %.3f \n", dConfig.norm() );
+
+		dConfig = Jt*dMov;
+
+		std::cout << "dConfig: " << dConfig << std::endl;
 		if( dConfig.norm() > mConfigStep ) {
 			double n = dConfig.norm();
 			dConfig = dConfig *(mConfigStep/n);
-			printf("NEW dConfig : %.3f \n", dConfig.norm() );
+			//printf("NEW dConfig : %.3f \n", dConfig.norm() );
+			std::cout << "NEW dConfig: " << dConfig << std::endl;
 		}
 		_q = _q + dConfig;
 		_workspacePath.push_back( _q );
 
 		dXYZ = (_targetXYZ - GetXYZ(_q) );
+		dRPY = ( _targetRPY - GetRPY(_q) );
+		dMov << dXYZ, dRPY;
 		iter++;
 	}
 
@@ -168,19 +192,47 @@ bool JTFollower::GoToXYZ( Eigen::VectorXd &_q,
 }
 
 /**
+ * @function GoToXYZ
+ */
+bool JTFollower::GoToXYZ(  Eigen::VectorXd &_q,
+				Eigen::VectorXd _targetXYZ,
+				std::vector<Eigen::VectorXd> &_workspacePath ) {
+  return GoToXYZR( _q, _targetXYZ, GetRPY(_q), _workspacePath);
+
+}
+
+/**
+ * @function GetRPY
+ */
+Eigen::VectorXd JTFollower::GetRPY( Eigen::VectorXd _q ) {
+	// Get current RPY position
+	mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
+	mWorld->getRobot(mRobotId)->update();
+
+	Eigen::MatrixXd qTransformFull = mEENode->getWorldTransform();
+	std::cout << "QTransformFull:" << std::endl << qTransformFull << std::endl;
+
+	qTransformFull.conservativeResize(3,3);
+	Eigen::Matrix3d qTransform; qTransform << qTransformFull;
+	std::cout << "QTransform:" << std::endl << qTransform << std::endl;
+
+
+	Eigen::VectorXd qRPY(3); qRPY << qTransform.eulerAngles(0,1,2);
+	std::cout << "Euler Angles: " << std::endl << qRPY << std::endl;
+	return qRPY;
+}
+
+
+/**
  * @function GetXYZ
  */
 Eigen::VectorXd JTFollower::GetXYZ( Eigen::VectorXd _q ) {
-
-
 	// Get current XYZ position
 	mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 	mWorld->getRobot(mRobotId)->update();
 
 	Eigen::MatrixXd qTransform = mEENode->getWorldTransform();
 	Eigen::VectorXd qXYZ(3); qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
-
-
 
 	return qXYZ;
 }
