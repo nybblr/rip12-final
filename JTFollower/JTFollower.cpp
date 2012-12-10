@@ -108,7 +108,7 @@ std::vector< Eigen::VectorXd > JTFollower::PlanPath( const Eigen::VectorXd &_sta
  * @function GetPseudoInvJac
  */
 Eigen::MatrixXd JTFollower::GetPseudoInvJac( Eigen::VectorXd _q ) {
-	printf("Num Dependent DOF minus 6D0F is : %d \n", mEENode->getNumDependentDofs() - 6 );
+  //printf("Num Dependent DOF minus 6D0F is : %d \n", mEENode->getNumDependentDofs() - 6 );
 
 	Eigen::MatrixXd Jaclin = mEENode->getJacobianLinear();
 	//std::cout<< "Jaclin_raw: \n"<< Jaclin << std::endl;
@@ -137,29 +137,29 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 			   Eigen::VectorXd _targetRPY,
 			   std::vector<Eigen::VectorXd> &_workspacePath ) {
 
-
-
   Eigen::VectorXd dXYZ,dRPY,dMov(6);
   Eigen::VectorXd dConfig;
 
 	int iter;
+	mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 	mWorld->getRobot(mRobotId)->update();
 
 	//-- Initialize
 	dXYZ = ( _targetXYZ - GetXYZ(_q) ); // GetXYZ also updates the config to _q, so Jac use an updated value
 	dRPY = ( _targetRPY - GetRPY(_q) ); // GetRPY also updates the config to _q, so Jac use an updated value
-	std::cout << "GoToXYZR" << std::endl;
+	//std::cout << "GoToXYZR" << std::endl;
 	dMov << dXYZ,dRPY;
 
-
+	std::cout << dXYZ << std::endl;
+	std::cout << dRPY << std::endl;
 	iter = 0;
 	//printf("New call to GoToXYZ: dXYZ: %f  \n", dXYZ.norm() );
 	while( dXYZ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();
 
-		std::cout << "Mov Error (raw): " << std::endl << dMov << std::endl;
-		std::cout << "Mov Error (nor): " << std::endl << dMov.norm() << std::endl;
+		//std::cout << "Mov Error (raw): " << std::endl << dMov << std::endl;
+		///std::cout << "Mov Error (nor): " << std::endl << dMov.norm() << std::endl;
 
 		Eigen::MatrixXd Jt = GetPseudoInvJac(_q);
 
@@ -183,14 +183,16 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 			//std::cout << "NEW dConfig: " << dConfig << std::endl;
 		}
 
-		//std::cout << "dConfig: " << std::endl << dConfig << std::endl;
-		//std::cout << "_q: " << _q << std::endl;
+		std::cout << "_q: " << _q << std::endl;
+		
+		
 		_q = _q + dConfig;
 		_workspacePath.push_back( _q );
 
 		dXYZ = (_targetXYZ - GetXYZ(_q) );
-		dRPY = ( _targetRPY - GetRPY(_q) );
-		dMov << dXYZ, dRPY;
+		dRPY = (_targetRPY - GetRPY(_q) );
+
+		dMov = (Eigen::VectorXd(6) << dXYZ, dRPY).finished();
 		iter++;
 	}
 
@@ -214,7 +216,7 @@ bool JTFollower::GoToXYZ(  Eigen::VectorXd &_q,
  */
 Eigen::VectorXd JTFollower::GetRPY( Eigen::VectorXd _q ) {
 	// Get current RPY position
-	mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
+	mWorld->getRobot(mRobotId)->setQuickDofs( _q );
 	mWorld->getRobot(mRobotId)->update();
 
 	Eigen::MatrixXd qTransform = mEENode->getWorldTransform();
@@ -226,7 +228,8 @@ Eigen::VectorXd JTFollower::GetRPY( Eigen::VectorXd _q ) {
 
 	Eigen::VectorXd qRPY(3); qRPY << r,p,y;
 
-	std::cout << "Euler Angles: " << std::endl << RAD2DEG(r) << RAD2DEG(p) << RAD2DEG(y) << std::endl;
+	//std::cout << "Euler Angles: " << std::endl << r << p << y << std::endl;
+	//std::cout << "Euler Angles: " << std::endl << RAD2DEG(r) << RAD2DEG(p) << RAD2DEG(y) << std::endl;
 	return qRPY;
 }
 
@@ -236,7 +239,7 @@ Eigen::VectorXd JTFollower::GetRPY( Eigen::VectorXd _q ) {
  */
 Eigen::VectorXd JTFollower::GetXYZ( Eigen::VectorXd _q ) {
 	// Get current XYZ position
-	mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
+	mWorld->getRobot(mRobotId)->setQuickDofs( _q );
 	mWorld->getRobot(mRobotId)->update();
 
 	Eigen::MatrixXd qTransform = mEENode->getWorldTransform();
