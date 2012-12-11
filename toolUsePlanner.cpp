@@ -238,8 +238,8 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 	break;
       }
       std::cout << "(i) Setting Start state for " << mWorld->getRobot(mRobotId)->getName() << ":" << std::endl;
-
-      mStartConf = mWorld->getRobot(mRobotId)->getQuickDofs();
+	  mStartConf.resize(0);
+      mStartConf = mWorld->getRobot(mRobotId)->getDofs( mLinks );
 
       for( unsigned int i = 0; i < mStartConf.size(); i++ )
 	{  std::cout << mStartConf(i) << " ";  }
@@ -251,77 +251,105 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
     /** Go To Object */
   case button_goToObject:
+	  {
     if ( mWorld != NULL ) {
       if( mWorld->getNumRobots() < 1){
-	std::cout << "(!) Must have a world with a robot to set a Goal state.(!)" << std::endl;
-	break;
+		std::cout << "(!) Must have a world with a robot to set a Goal state.(!)" << std::endl;
+		break;
       }
-      std::cout << "(i) Setting Goal state for " << mWorld->getObject(mObjectId)->getName() << ":" << std::endl;
-      mGoalConf = mWorld->getRobot(mRobotId)->getQuickDofs();
+	}
+	  mStartConf.resize(0);
+      mStartConf = mWorld->getRobot(mRobotId)->getDofs( mLinks );
+	  std::cout << "(i) Start state :" << mStartConf << std::endl;
+	  std::cout << "(i) Setting Goal state for " << mWorld->getObject(mObjectId)->getName() << std::endl;
 
 
+	   // Get the transform of the current object
+	  Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
 
-			// Get the transform of the current object
-			Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
+	  double r,p,y;
+	  r = atan2( qTransform(2,1), qTransform(2,2) );
+	  p = -asin( qTransform(2,0) );
+	  y = atan2( qTransform(1,0), qTransform(0,0) );
+	  std::string mObjName = mWorld->getObject(mObjectId)->getName();
 
-			double r,p,y;
-			r = atan2( qTransform(2,1), qTransform(2,2) );
-			p = -asin( qTransform(2,0) );
-			y = atan2( qTransform(1,0), qTransform(0,0) );
-
-			Eigen::VectorXd qRPY(3); qRPY << r,p,y;
-			Eigen::VectorXd qXYZ(3); qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+	  Eigen::VectorXd qRPY(3);
+	  Eigen::VectorXd qXYZ(3);
+	  if (mObjName == "bolt"){
+			qRPY << r,p-PI/2.0,y;
+			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+	  }
+	  else if (mObjName == "driver"){
+			qRPY << r,p-PI/2.0,y;
+			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.15;
+	  }
+	  else {
+			qRPY << r,p,y+PI/2;
+			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+	  }
 
 
       JTFollower *jt = new JTFollower(*mWorld);
-      jt->init( mRobotId, mLinks, "", -1, 0.02 );
+      jt->init( mRobotId, mLinks, mEEName, mEEId, 0.02 );
 
-			// Move the arm to that configuration
-			std::vector<Eigen::VectorXd> wsPath;
-			jt->GoToXYZR(mStartConf, qXYZ, qRPY, wsPath);
+	  // Move the arm to that configuration
+	  std::vector<Eigen::VectorXd> wsPath;
+	  Eigen::VectorXd start = mStartConf;
 
-			// SetTimeline( wsPath ,true);
-
-      for( unsigned int i = 0; i < mGoalConf.size(); i++ )
-	{ std::cout << mGoalConf(i) << " "; }
-      std::cout << std::endl;
-    } else {
-      std::cout << "(!) Must have a world loaded to set a Goal state"<< std::endl;
-    }
+	  if( jt->GoToXYZR( start, qXYZ, qRPY, wsPath ) == true){
+			printf("Found solution JT! \n");
+			SetTimeline( wsPath ,true);
+			}
+	  else{
+			printf("NO Found solution JT! Plotting anyway \n");
+			SetTimeline( wsPath ,true);
+			}
+	  }
     break;
 
     /** Pick Up Object */
   case button_pickUpObject:
-    if( mStartConf.size() < 1 ){
-      std::cout << "(x) First, set a start configuration" << std::endl;
-      break;
-    }
+	  {
+    pickedUp = true;
+	pickedUpObjectId = mObjectId;
+	// Get the transform of the current object
+	Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
 
-    mWorld->getRobot(mRobotId)->setQuickDofs( mStartConf );
+	double ro,pi,ya;
+	ro = atan2( qTransform(2,1), qTransform(2,2) );
+	pi = -asin( qTransform(2,0) );
+	ya = atan2( qTransform(1,0), qTransform(0,0) );
 
-    for( unsigned int i = 0; i< mStartConf.size(); i++ )
-      {  std::cout << mStartConf(i) << " "; }
-    std::cout << std::endl;
+	Eigen::VectorXd qRPY(3);
+	Eigen::VectorXd qXYZ(3);
+	qRPY << ro,pi,ya;
+	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
 
-    mWorld->getRobot(mRobotId)->update();
-    viewer->UpdateCamera();
+	// Get the transform of the end effector
+	Eigen::MatrixXd eTransform = mWorld->getRobot(mRobotId)->getNode(mEEId)->getWorldTransform();
+
+	double r,p,y;
+	r = atan2( eTransform(2,1), eTransform(2,2) );
+	p = -asin( eTransform(2,0) );
+	y = atan2( eTransform(1,0), eTransform(0,0) );
+
+	Eigen::VectorXd eRPY(3);
+	Eigen::VectorXd eXYZ(3);
+	eRPY << r,p,y;
+	eXYZ << eTransform(0,3), eTransform(1,3), eTransform(2,3);
+
+	mRelationshipXYZ = eXYZ-qXYZ;
+	mRelationshipRPY = eRPY-qRPY;
+
+	std::cout << "Relationship XYZ: " << mRelationshipXYZ << std::endl;
+	std::cout << "Relationship RPY: " << mRelationshipRPY << std::endl;
+	  }
+
     break;
 
     /** Drop Off Object */
   case button_dropOffObject:
-    if( mGoalConf.size() < 1 ){
-      std::cout << "(x) First, set a goal configuration" << std::endl;
-      break;
-    }
-
-    mWorld->getRobot(mRobotId)->setQuickDofs( mGoalConf );
-
-    for( unsigned int i = 0; i< mGoalConf.size(); i++ )
-      {  std::cout << mGoalConf[i] << " ";  }
-    std::cout << std::endl;
-
-    mWorld->getRobot(mRobotId)->update();
-    viewer->UpdateCamera();
+    pickedUp = 0;
     break;
 
     /** Reset Planner */
@@ -374,7 +402,7 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
   case button_UpdateTime:
     {
       /// Update the time span of the movie timeline
-      SetTimeline();
+      //SetTimeline();
     }
     break;
 
@@ -394,32 +422,57 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
  * @function setTimeLine
  * @brief
  */
-void ToolUsePlannerTab::SetTimeline() {
+void ToolUsePlannerTab::SetTimeline(std::vector< Eigen::VectorXd > _path, bool resetPath) {
 
-    if( mWorld == NULL || mPlanner == NULL || mPlanner->path.size() == 0 ) {
-        cout << "--(!) Must create a valid plan before updating its duration (!)--" << endl;
-	return;
-    }
+    if( mWorld == NULL  ) {
+    printf("--(!) Must create a valid plan before updating its duration (!)--");
+    return;
+  }
 
-    double T;
-    mTimeText->GetValue().ToDouble(&T);
+  double T = 10;
+  int numsteps = _path.size();
+  double increment = T/(double)numsteps;
 
-    int numsteps = mPlanner->path.size();
-    double increment = T/(double)numsteps;
+  printf( "** Ready to see Plan: Updated Timeline - Increment: %f, Total T: %f  Steps: %d \n", increment, T, numsteps);
 
-    cout << "-->(+) Updating Timeline - Increment: " << increment << " Total T: " << T << " Steps: " << numsteps << endl;
+  if(resetPath)
+    frame->InitTimer( string("Plan"),increment );
+  Eigen::VectorXd vals( mLinks.size() );
 
-    frame->InitTimer( string("RRT_Plan"),increment );
+  for( int i = 0; i < _path.size(); i++ ) {
+    mWorld->getRobot( mRobotId )->setDofs( _path[i], mLinks );
+    mWorld->getRobot(mRobotId)->update();
+	
 
-    Eigen::VectorXd vals( mLinks.size() );
+	if (pickedUp){
+	// Get the transform of the end effector
+	Eigen::MatrixXd eTransform = mWorld->getRobot(mRobotId)->getNode(mEEId)->getWorldTransform();
 
-    for( std::list<Eigen::VectorXd>::iterator it = mPlanner->path.begin(); it != mPlanner->path.end(); it++ ) {
+	double r,p,y;
+	r = atan2( eTransform(2,1), eTransform(2,2) );
+	p = -asin( eTransform(2,0) );
+	y = atan2( eTransform(1,0), eTransform(0,0) );
 
-        mWorld->getRobot( mRobotId)->setQuickDofs( *it );
-				mWorld->getRobot(mRobotId)->update();
+	Eigen::VectorXd eRPY(3);
+	Eigen::VectorXd eXYZ(3);
+	eRPY << r,p,y;
+	eXYZ << eTransform(0,3), eTransform(1,3), eTransform(2,3);
 
-        frame->AddWorld( mWorld );
-    }
+	Eigen::VectorXd qRPY(3);
+	Eigen::VectorXd qXYZ(3);
+	qRPY = eRPY-mRelationshipRPY;
+	qXYZ = eXYZ-mRelationshipRPY;
+
+	std::cout << "Relationship XYZ: " << eXYZ-qXYZ << std::endl;
+	std::cout << "Relationship RPY: " << eRPY-qRPY << std::endl;
+	
+	mWorld->getObject(pickedUpObjectId)->setPositionXYZ(qXYZ(0),qXYZ(1),qXYZ(2));
+	mWorld->getObject(pickedUpObjectId)->setRotationRPY(qRPY(0),qRPY(1),qRPY(2));
+	mWorld->getObject(pickedUpObjectId)->update();
+
+	}
+    frame->AddWorld( mWorld );
+  }
 
 }
 
@@ -557,7 +610,4 @@ void ToolUsePlannerTab::getLinks() {
   //mStartHardcode.resize( mNumLinks );
   //mStartHardcode << 0.528,  -1.089,  0.176,  -1.156,  -0.276,  -0.873,  0.000; // -> Pointing down
   // mStartHardcode <<  0.075,  -1.022,  -0.478,  -1.022,  0.000,  -0.854,  0.000 ;
-
-
-
 }
