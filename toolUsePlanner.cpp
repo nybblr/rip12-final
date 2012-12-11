@@ -272,7 +272,7 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 	  p = -asin( qTransform(2,0) );
 	  y = atan2( qTransform(1,0), qTransform(0,0) );
 
-	  Eigen::VectorXd qRPY(3); qRPY << r,p,y;
+	  Eigen::VectorXd qRPY(3); qRPY << r-PI/2.0,p+PI/2.0,y;
 	  Eigen::VectorXd qXYZ(3); qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
 
 

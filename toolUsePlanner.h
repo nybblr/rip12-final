@@ -20,6 +20,9 @@
 
 #include <iostream>
 
+
+#define PI 3.141592653589793238
+
 /**
  * @class RipTabPlanner
  * @brief Implements the RIP Tab + Planners
