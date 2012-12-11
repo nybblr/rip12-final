@@ -277,7 +277,7 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
 
       JTFollower *jt = new JTFollower(*mWorld);
-      jt->init( mRobotId, mLinks, mEEname, mEEid, 0.02 );
+      jt->init( mRobotId, mLinks, mEEName, mEEId, 0.02 );
 
 	  // Move the arm to that configuration
 	  std::vector<Eigen::VectorXd> wsPath;
