@@ -31,8 +31,12 @@ public:
     Eigen::VectorXd mGoalConf;
 
     int mRobotId;
-	int mObjectId;
+		int mObjectId;
     Eigen::VectorXi mLinks;
+
+		int mNumLinks;
+		int mEEId;
+		std::string mEEName;
 
     int mRrtStyle;
     bool mGreedyMode;
@@ -46,6 +50,9 @@ public:
     robotics::Object* mSelectedObject;
     robotics::Robot* mSelectedRobot;
     dynamics::BodyNodeDynamics* mSelectedNode;
+
+		// Utilities
+		void getLinks();
 
     /// Functions
 

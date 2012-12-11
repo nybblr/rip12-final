@@ -17,6 +17,9 @@
 
 #include <iostream>
 
+#include <kinematics/Joint.h>
+#include <kinematics/Dof.h>
+
 #include <Tabs/AllTabs.h>
 #include <GRIPApp.h>
 
@@ -74,7 +77,7 @@ ToolUsePlannerTab::ToolUsePlannerTab( wxWindow *parent, const wxWindowID id,
     mGoalConf.resize(0);
 
     mRobotId = 0;
-	mObjectId = 3;
+		mObjectId = 3;
     mLinks.resize(0);
 
     mRrtStyle = 0;
@@ -223,6 +226,7 @@ void ToolUsePlannerTab::OnRadio(wxCommandEvent &evt) {
 void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
   int button_num = evt.GetId();
+  getLinks();
 
   switch (button_num) {
 
@@ -254,6 +258,29 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
       }
       std::cout << "(i) Setting Goal state for " << mWorld->getObject(mObjectId)->getName() << ":" << std::endl;
       mGoalConf = mWorld->getRobot(mRobotId)->getQuickDofs();
+
+
+
+			// Get the transform of the current object
+			Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
+
+			double r,p,y;
+			r = atan2( qTransform(2,1), qTransform(2,2) );
+			p = -asin( qTransform(2,0) );
+			y = atan2( qTransform(1,0), qTransform(0,0) );
+
+			Eigen::VectorXd qRPY(3); qRPY << r,p,y;
+			Eigen::VectorXd qXYZ(3); qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+
+
+      JTFollower *jt = new JTFollower(*mWorld);
+      jt->init( mRobotId, mLinks, "", -1, 0.02 );
+
+			// Move the arm to that configuration
+			std::vector<Eigen::VectorXd> wsPath;
+			jt->GoToXYZR(mStartConf, qXYZ, qRPY, wsPath);
+
+			// SetTimeline( wsPath ,true);
 
       for( unsigned int i = 0; i < mGoalConf.size(); i++ )
 	{ std::cout << mGoalConf(i) << " "; }
@@ -500,4 +527,37 @@ void ToolUsePlannerTab::GRIPStateChange() {
   //cout << buf << endl;
   frame->SetStatusText(wxString(statusBuf.c_str(), wxConvUTF8));
   sizerFullTool->Layout();
+}
+
+/**
+ * @function getLinks
+ */
+void ToolUsePlannerTab::getLinks() {
+
+  mNumLinks = mWorld->getRobot(mRobotId)->getNumQuickDofs();
+
+  mLinks.resize( mNumLinks );
+  mLinks =  mWorld->getRobot(mRobotId)->getQuickDofsIndices();
+
+  mEEName = "FT";
+  mEEId = -1;
+
+  for( int i = 0; i < mNumLinks; i++){
+    int EEDofId = mLinks( i );
+    int id = mWorld->getRobot(mRobotId)->getDof( EEDofId )->getJoint()->getChildNode()->getSkelIndex();
+    if ( mEEName.compare(mWorld->getRobot(mRobotId)->getNode(id)->getName()) == 0){
+      mEEId = id;
+    }
+  }
+
+  std::cout << "Link IDs: " << mLinks.transpose() << std::endl;
+  std::cout << " EE Name: "<<mWorld->getRobot(mRobotId)->getNode(mEEId)->getName() << std::endl;
+
+  // Only for Schunk (no hand) -- Comment otherwise
+  //mStartHardcode.resize( mNumLinks );
+  //mStartHardcode << 0.528,  -1.089,  0.176,  -1.156,  -0.276,  -0.873,  0.000; // -> Pointing down
+  // mStartHardcode <<  0.075,  -1.022,  -0.478,  -1.022,  0.000,  -0.854,  0.000 ;
+
+
+
 }
