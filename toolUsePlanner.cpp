@@ -86,7 +86,7 @@ GRIPTab(parent, id, pos, size, style) {
   mSmooth = false;
   mPlanner = NULL;
 
-	mWorkspaceThresh = 0.02;
+	mWorkspaceThresh = 0.08;
 	mMaxIter = 5000;
 
   sizerFullTool = new wxBoxSizer( wxHORIZONTAL );
@@ -293,7 +293,7 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
 
       JTFollower *jt = new JTFollower(*mWorld);
-      jt->init( mRobotId, mLinks, mEEName, mEEId, 0.02 );
+      jt->init( mRobotId, mLinks, mEEName, mEEId, mWorkspaceThresh );
 
       // Move the arm to that configuration
       std::vector<Eigen::VectorXd> wsPath;
@@ -301,11 +301,11 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
       if( jt->GoToXYZR( start, qXYZ, qRPY, wsPath ) == true){
 	printf("Found solution JT! \n");
-	SetTimeline( wsPath ,false);
+	SetTimeline( wsPath ,true);
       }
       else{
 	printf("NO Found solution JT! Plotting anyway \n");
-	SetTimeline( wsPath ,false);
+	SetTimeline( wsPath ,true);
       }
     }
     break;
@@ -396,7 +396,7 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
 
       JTFollower *jt = new JTFollower(*mWorld);
-      jt->init( mRobotId, mLinks, mEEName, mEEId, 0.02 );
+      jt->init( mRobotId, mLinks, mEEName, mEEId, mWorkspaceThresh );
 
       // Move the arm to that configuration
       std::vector<Eigen::VectorXd> wsPath;

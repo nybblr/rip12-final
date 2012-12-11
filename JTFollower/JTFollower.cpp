@@ -111,6 +111,7 @@ Eigen::MatrixXd JTFollower::GetPseudoInvJac( Eigen::VectorXd _q ) {
 
 	Eigen::MatrixXd Jaclin = mEENode->getJacobianLinear();
 	Eigen::MatrixXd Jacang = mEENode->getJacobianAngular();
+
 	Eigen::MatrixXd Jac(Jaclin.rows()*2,Jaclin.cols()); Jac << Jaclin, Jacang;
 	Jac = Jac.topRightCorner( 6, mEENode->getNumDependentDofs() -6 );
 
@@ -119,6 +120,7 @@ Eigen::MatrixXd JTFollower::GetPseudoInvJac( Eigen::VectorXd _q ) {
 	Eigen::MatrixXd JJt = (Jac*JacT);
 	Eigen::FullPivLU<Eigen::MatrixXd> lu(JJt);
 	Jt = JacT*( lu.inverse() );
+	std::cout << "JacangInv: " << std::endl << Jt.rightCols(3) << std::endl;
 	return Jt;
 }
 
@@ -141,9 +143,9 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 	//-- Initialize
 	dXYZ = ( _targetXYZ - GetXYZ(_q) ); // GetXYZ also updates the config to _q, so Jac use an updated value
 	dRPY = ( _targetRPY - GetRPY(_q) ); // GetRPY also updates the config to _q, so Jac use an updated value
+	std::cout << "dRPY: " << std::endl << dRPY << std::endl;
 	dMov << dXYZ,dRPY;
 	iter = 0;
-
 	while( dMov.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();

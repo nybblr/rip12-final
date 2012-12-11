@@ -41,7 +41,7 @@ Georgia Tech.
   robots to search and rescue applications by using tools and
   exploration algorithms.
 
-* Related Work
+`* Related Work
   Tool manipulation in workspace is very common in both research and
   industry.
 
