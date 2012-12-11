@@ -31,12 +31,12 @@ public:
     Eigen::VectorXd mGoalConf;
 
     int mRobotId;
-		int mObjectId;
+	int mObjectId;
     Eigen::VectorXi mLinks;
 
-		int mNumLinks;
-		int mEEId;
-		std::string mEEName;
+	int mNumLinks;
+	int mEEId;
+	std::string mEEName;
 
     int mRrtStyle;
     bool mGreedyMode;
@@ -67,7 +67,7 @@ public:
     void OnRadio(wxCommandEvent &evt);
     void OnButton(wxCommandEvent &evt);
     void OnCheckBox(wxCommandEvent &evt);
-    void SetTimeline();
+	void SetTimeline( std::vector< Eigen::VectorXd > _path, bool resetPath);
     void GRIPStateChange();
 
     // Thread specific
