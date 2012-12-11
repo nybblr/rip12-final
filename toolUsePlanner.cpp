@@ -141,7 +141,7 @@ GRIPTab(parent, id, pos, size, style) {
 		  0, // make horizontally unstretchable
 		  wxALL, // make border all around (implicit top alignment)
 		  1 ); // set border width to 1, so start buttons are close together
-  col2Sizer->Add( new wxButton(this, button_empty1, wxT("Check collision")),
+  col2Sizer->Add( new wxButton(this, button_empty1, wxT("Clear timeline")),
 		  0, // make horizontally unstretchable
 		  wxALL, // make border all around (implicit top alignment)
 		  1 ); // set border width to 1, so start buttons are close together
@@ -298,11 +298,11 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
       if( jt->GoToXYZR( start, qXYZ, qRPY, wsPath ) == true){
 	printf("Found solution JT! \n");
-	SetTimeline( wsPath ,true);
+	SetTimeline( wsPath ,false);
       }
       else{
 	printf("NO Found solution JT! Plotting anyway \n");
-	SetTimeline( wsPath ,true);
+	SetTimeline( wsPath ,false);
       }
     }
     break;
@@ -346,13 +346,8 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
     /** Empty button 1 */
   case button_empty1:
     {
-      std::cout << "(0) Checking Collisions" << std::endl;
-      bool st;
-      st = mWorld->checkCollision();
-      if( st == true )
-	{ printf("Collisions \n");}
-      else
-	{ printf("No Collisions \n");}
+      std::vector<Eigen::VectorXd> path;
+      SetTimeline(path, true);
 
     }
     break;
