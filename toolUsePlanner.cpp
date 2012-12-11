@@ -406,8 +406,6 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
       Eigen::VectorXd mCurrConf = mStartConf;
       Eigen::VectorXd dQ, vec, mNewConf;
       for (int num_iterations = 5; num_iterations > 0; num_iterations --){
-			mWorld->getRobot(mRobotId)->getNode(mEEId);
-
 			mGoalConf(6) += PI/3;
 
 			wsPath.push_back( mCurrConf );
@@ -415,10 +413,10 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 			std::cout << "mStartConf = " << mStartConf << std::endl;
 			std::cout << "mGoalConf = " << mGoalConf << std::endl;
 
-			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
+			if( (qXYZ - jt->GetXYZ(mCurrConf)).norm() > mWorkspaceThresh ) {
 				int iter = 0;
 
-				dQ = ( mGoalConf - mStartConf );
+				dQ = ( mGoalConf - mCurrConf );
 				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 					dQ = ( mGoalConf - mCurrConf );
 					vec = dQ / dQ.norm() * mWorkspaceThresh;
@@ -433,17 +431,19 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 			}
 
 			mWorld->getRobot(mRobotId)->getNode(mEEId);
-			mGoalConf(4) -= PI/4;
+			mGoalConf(8) += PI/4;
+			mGoalConf(11) += PI/4;
+			mGoalConf(14) -= PI/4;
 
 			wsPath.push_back( mCurrConf );
 
 			std::cout << "mStartConf = " << mStartConf << std::endl;
 			std::cout << "mGoalConf = " << mGoalConf << std::endl;
 
-			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
+			if( (qXYZ - jt->GetXYZ(mCurrConf)).norm() > mWorkspaceThresh ) {
 				int iter = 0;
 
-				dQ = ( mGoalConf - mStartConf );
+				dQ = ( mGoalConf - mCurrConf );
 				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 					dQ = ( mGoalConf - mCurrConf );
 					vec = dQ / dQ.norm() * mWorkspaceThresh;
@@ -465,10 +465,10 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 			std::cout << "mStartConf = " << mStartConf << std::endl;
 			std::cout << "mGoalConf = " << mGoalConf << std::endl;
 
-			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
+			if( (qXYZ - jt->GetXYZ(mCurrConf)).norm() > mWorkspaceThresh ) {
 				int iter = 0;
 
-				dQ = ( mGoalConf - mStartConf );
+				dQ = ( mGoalConf - mCurrConf );
 				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 					dQ = ( mGoalConf - mCurrConf );
 					 vec = dQ / dQ.norm() * mWorkspaceThresh;
@@ -484,17 +484,20 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
 			mWorld->getRobot(mRobotId)->getNode(mEEId);
 
-			mGoalConf(4) += PI/4;
+
+			mGoalConf(8) -= PI/4;
+			mGoalConf(11) -= PI/4;
+			mGoalConf(14) += PI/4;
 
 			wsPath.push_back( mCurrConf );
 
 			std::cout << "mStartConf = " << mStartConf << std::endl;
 			std::cout << "mGoalConf = " << mGoalConf << std::endl;
 
-			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
+			if( (qXYZ - jt->GetXYZ(mCurrConf)).norm() > mWorkspaceThresh ) {
 				int iter = 0;
 
-				 dQ = ( mGoalConf - mStartConf );
+				 dQ = ( mGoalConf - mCurrConf );
 				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 					dQ = ( mGoalConf - mCurrConf );
 					 vec = dQ / dQ.norm() * mWorkspaceThresh;
