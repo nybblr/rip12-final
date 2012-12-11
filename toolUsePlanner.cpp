@@ -271,9 +271,22 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 	  r = atan2( qTransform(2,1), qTransform(2,2) );
 	  p = -asin( qTransform(2,0) );
 	  y = atan2( qTransform(1,0), qTransform(0,0) );
+	  std::string mObjName = mWorld->getObject(mObjectId)->getName();
 
-	  Eigen::VectorXd qRPY(3); qRPY << r-PI/2.0,p+PI/2.0,y;
-	  Eigen::VectorXd qXYZ(3); qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+	  Eigen::VectorXd qRPY(3);
+	  Eigen::VectorXd qXYZ(3);
+	  if (mObjName == "bolt"){
+			qRPY << r,p-PI/2.0,y;
+			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+	  }
+	  else if (mObjName == "driver"){
+			qRPY << r,p-PI/2.0,y;
+			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.15;
+	  }
+	  else {
+			qRPY << r,p,y+PI/2;
+			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+	  }
 
 
       JTFollower *jt = new JTFollower(*mWorld);
@@ -296,36 +309,47 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
     /** Pick Up Object */
   case button_pickUpObject:
-    if( mStartConf.size() < 1 ){
-      std::cout << "(x) First, set a start configuration" << std::endl;
-      break;
-    }
+	  {
+    pickedUp = true;
+	pickedUpObjectId = mObjectId;
+	// Get the transform of the current object
+	Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
 
-    mWorld->getRobot(mRobotId)->setQuickDofs( mStartConf );
+	double ro,pi,ya;
+	ro = atan2( qTransform(2,1), qTransform(2,2) );
+	pi = -asin( qTransform(2,0) );
+	ya = atan2( qTransform(1,0), qTransform(0,0) );
 
-    for( unsigned int i = 0; i< mStartConf.size(); i++ )
-      {  std::cout << mStartConf(i) << " "; }
-    std::cout << std::endl;
+	Eigen::VectorXd qRPY(3);
+	Eigen::VectorXd qXYZ(3);
+	qRPY << ro,pi,ya;
+	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
 
-    mWorld->getRobot(mRobotId)->update();
-    viewer->UpdateCamera();
+	// Get the transform of the end effector
+	Eigen::MatrixXd eTransform = mWorld->getRobot(mRobotId)->getNode(mEEId)->getWorldTransform();
+
+	double r,p,y;
+	r = atan2( eTransform(2,1), eTransform(2,2) );
+	p = -asin( eTransform(2,0) );
+	y = atan2( eTransform(1,0), eTransform(0,0) );
+
+	Eigen::VectorXd eRPY(3);
+	Eigen::VectorXd eXYZ(3);
+	eRPY << r,p,y;
+	eXYZ << eTransform(0,3), eTransform(1,3), eTransform(2,3);
+
+	mRelationshipXYZ = eXYZ-qXYZ;
+	mRelationshipRPY = eRPY-qRPY;
+
+	std::cout << "Relationship XYZ: " << mRelationshipXYZ << std::endl;
+	std::cout << "Relationship RPY: " << mRelationshipRPY << std::endl;
+	  }
+
     break;
 
     /** Drop Off Object */
   case button_dropOffObject:
-    if( mGoalConf.size() < 1 ){
-      std::cout << "(x) First, set a goal configuration" << std::endl;
-      break;
-    }
-
-    mWorld->getRobot(mRobotId)->setQuickDofs( mGoalConf );
-
-    for( unsigned int i = 0; i< mGoalConf.size(); i++ )
-      {  std::cout << mGoalConf[i] << " ";  }
-    std::cout << std::endl;
-
-    mWorld->getRobot(mRobotId)->update();
-    viewer->UpdateCamera();
+    pickedUp = 0;
     break;
 
     /** Reset Planner */
@@ -418,6 +442,35 @@ void ToolUsePlannerTab::SetTimeline(std::vector< Eigen::VectorXd > _path, bool r
   for( int i = 0; i < _path.size(); i++ ) {
     mWorld->getRobot( mRobotId )->setDofs( _path[i], mLinks );
     mWorld->getRobot(mRobotId)->update();
+	
+
+	if (pickedUp){
+	// Get the transform of the end effector
+	Eigen::MatrixXd eTransform = mWorld->getRobot(mRobotId)->getNode(mEEId)->getWorldTransform();
+
+	double r,p,y;
+	r = atan2( eTransform(2,1), eTransform(2,2) );
+	p = -asin( eTransform(2,0) );
+	y = atan2( eTransform(1,0), eTransform(0,0) );
+
+	Eigen::VectorXd eRPY(3);
+	Eigen::VectorXd eXYZ(3);
+	eRPY << r,p,y;
+	eXYZ << eTransform(0,3), eTransform(1,3), eTransform(2,3);
+
+	Eigen::VectorXd qRPY(3);
+	Eigen::VectorXd qXYZ(3);
+	qRPY = eRPY-mRelationshipRPY;
+	qXYZ = eXYZ-mRelationshipRPY;
+
+	std::cout << "Relationship XYZ: " << eXYZ-qXYZ << std::endl;
+	std::cout << "Relationship RPY: " << eRPY-qRPY << std::endl;
+	
+	mWorld->getObject(pickedUpObjectId)->setPositionXYZ(qXYZ(0),qXYZ(1),qXYZ(2));
+	mWorld->getObject(pickedUpObjectId)->setRotationRPY(qRPY(0),qRPY(1),qRPY(2));
+	mWorld->getObject(pickedUpObjectId)->update();
+
+	}
     frame->AddWorld( mWorld );
   }
 

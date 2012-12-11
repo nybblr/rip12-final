@@ -150,20 +150,20 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 	//std::cout << "GoToXYZR" << std::endl;
 	dMov << dXYZ,dRPY;
 
-	std::cout << dXYZ << std::endl;
-	std::cout << dRPY << std::endl;
+	//std::cout << dXYZ << std::endl;
+	//std::cout << dRPY << std::endl;
 	iter = 0;
 	//printf("New call to GoToXYZ: dXYZ: %f  \n", dXYZ.norm() );
 	while( dXYZ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();
 
-		std::cout << "Mov Error (raw): " << std::endl << dMov << std::endl;
-		std::cout << "Mov Error (nor): " << std::endl << dMov.norm() << std::endl;
+		//std::cout << "Mov Error (raw): " << std::endl << dMov << std::endl;
+		//std::cout << "Mov Error (nor): " << std::endl << dMov.norm() << std::endl;
 
 		Eigen::MatrixXd Jt = GetPseudoInvJac(_q);
 
-		std::cout << "Jt:" << std::endl << Jt << std::endl;
+		//std::cout << "Jt:" << std::endl << Jt << std::endl;
 		//std::cin.get();
 
 		//dConfig << Eigen::VectorXd::Zero(_q.size() - Jt.cols()), Jt*dMov;
@@ -184,7 +184,7 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 			//std::cout << "NEW dConfig: " << dConfig << std::endl;
 		}
 
-		std::cout << "_q: " << _q << std::endl;
+		//std::cout << "_q: " << _q << std::endl;
 		
 		
 		_q = _q + dConfig;

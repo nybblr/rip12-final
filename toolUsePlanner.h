@@ -36,15 +36,19 @@ public:
 		int mRobotId;
 		int mObjectId;
 		Eigen::VectorXi mLinks;
-
+		Eigen::VectorXd mRelationshipXYZ;
+		Eigen::VectorXd mRelationshipRPY;
+		
 		int mNumLinks;
 		int mEEId;
+		int pickedUpObjectId;
 		std::string mEEName;
 
 		int mRrtStyle;
 		bool mGreedyMode;
 		bool mConnectMode;
 		bool mSmooth;
+		bool pickedUp;
 		PathPlanner *mPlanner;
 
 		wxTextCtrl *mTimeText;
