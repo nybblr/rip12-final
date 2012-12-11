@@ -44,6 +44,9 @@ public:
 		int pickedUpObjectId;
 		std::string mEEName;
 
+		int mMaxIter;
+		double mWorkspaceThresh;
+
 		int mRrtStyle;
 		bool mGreedyMode;
 		bool mConnectMode;

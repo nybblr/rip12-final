@@ -86,6 +86,9 @@ GRIPTab(parent, id, pos, size, style) {
   mSmooth = false;
   mPlanner = NULL;
 
+	mWorkspaceThresh = 0.02;
+	mMaxIter = 5000;
+
   sizerFullTool = new wxBoxSizer( wxHORIZONTAL );
 
   // ** Create left static box for configuring the planner **
@@ -162,7 +165,7 @@ GRIPTab(parent, id, pos, size, style) {
 		  0, // make horizontally unstretchable
 		  wxALL, // make border all around (implicit top alignment)
 		  1 ); // set border width to 1, so start buttons are close together
-  col3Sizer->Add( new wxButton(this, button_empty2, wxT("Empty 2")),
+  col3Sizer->Add( new wxButton(this, button_empty2, wxT("Screw Motion")),
 		  0, // make horizontally unstretchable
 		  wxALL, // make border all around (implicit top alignment)
 		  1 ); // set border width to 1, so start buttons are close together
@@ -359,7 +362,88 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
     /** Empty button 2 */
   case button_empty2:
-    std::cout << "-- (0) Empty Button to use for whatever you want (0)--" << std::endl;
+		{
+      if ( mWorld != NULL ) {
+	if( mWorld->getNumRobots() < 1){
+	  std::cout << "(!) Must have a world with a robot to set a Goal state.(!)" << std::endl;
+	  break;
+	}
+      }
+      mStartConf.resize(0);
+      mStartConf = mWorld->getRobot(mRobotId)->getDofs( mLinks );
+      std::cout << "(i) Start state :" << mStartConf << std::endl;
+      std::cout << "(i) Setting Goal state for " << mWorld->getObject(mObjectId)->getName() << std::endl;
+
+
+      // Get the transform of the current object
+      Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
+
+      double r,p,y;
+      r = atan2( qTransform(2,1), qTransform(2,2) );
+      p = -asin( qTransform(2,0) );
+      y = atan2( qTransform(1,0), qTransform(0,0) );
+      std::string mObjName = mWorld->getObject(mObjectId)->getName();
+
+      Eigen::VectorXd qRPY(3);
+      Eigen::VectorXd qXYZ(3);
+      if (mObjName == "bolt"){
+				qRPY << r,p-PI/2.0,y;
+				qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.1;
+      }
+      else if (mObjName == "driver"){
+				qRPY << r,p-PI/2.0,y;
+				qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.15;
+      }
+      else {
+				qRPY << r,p,y+PI/2;
+				qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+      }
+
+
+      JTFollower *jt = new JTFollower(*mWorld);
+      jt->init( mRobotId, mLinks, mEEName, mEEId, 0.02 );
+
+      // Move the arm to that configuration
+      std::vector<Eigen::VectorXd> wsPath;
+      Eigen::VectorXd start = mStartConf;
+
+			mWorld->getRobot(mRobotId)->getNode(mEEId);
+			Eigen::VectorXd mGoalConf = mStartConf;
+			mGoalConf(6) += PI/3;
+
+			Eigen::VectorXd mCurrConf = mStartConf;
+			wsPath.push_back( mCurrConf );
+
+			std::cout << "mStartConf = " << mStartConf << std::endl;
+			std::cout << "mGoalConf = " << mGoalConf << std::endl;
+
+			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
+				int iter = 0;
+
+				Eigen::VectorXd dQ = ( mGoalConf - mStartConf );
+				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
+					dQ = ( mGoalConf - mCurrConf );
+					Eigen::VectorXd vec = dQ / dQ.norm() * mWorkspaceThresh;
+
+					Eigen::VectorXd mNewConf = mCurrConf + vec;
+					wsPath.push_back( mNewConf );
+					mCurrConf = mNewConf;
+
+					iter++;
+				}
+			}
+
+
+
+      // if( jt->GoToXYZR( start, qXYZ, qRPY, wsPath ) == true){
+				printf("Found solution JT! \n");
+				SetTimeline( wsPath ,true);
+      // }
+      // else{
+				// printf("NO Found solution JT! Plotting anyway \n");
+				// SetTimeline( wsPath ,true);
+      // }
+    }
     break;
 
     /** Increment Object ID */
