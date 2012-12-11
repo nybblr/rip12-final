@@ -288,7 +288,7 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
       }
       else {
 	qRPY << r,p,y+PI/2;
-	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+	qXYZ << qTransform(0,3), qTransform(1,3)+.15, qTransform(2,3);
       }
 
 

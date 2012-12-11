@@ -144,7 +144,7 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 	dMov << dXYZ,dRPY;
 	iter = 0;
 
-	while( dXYZ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
+	while( dMov.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();
 
