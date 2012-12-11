@@ -402,11 +402,14 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
       std::vector<Eigen::VectorXd> wsPath;
       Eigen::VectorXd start = mStartConf;
 
+      Eigen::VectorXd mGoalConf = mStartConf;
+      Eigen::VectorXd mCurrConf = mStartConf;
+      Eigen::VectorXd dQ, vec, mNewConf;
+      for (int num_iterations = 5; num_iterations > 0; num_iterations --){
 			mWorld->getRobot(mRobotId)->getNode(mEEId);
-			Eigen::VectorXd mGoalConf = mStartConf;
+
 			mGoalConf(6) += PI/3;
 
-			Eigen::VectorXd mCurrConf = mStartConf;
 			wsPath.push_back( mCurrConf );
 
 			std::cout << "mStartConf = " << mStartConf << std::endl;
@@ -415,21 +418,98 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
 				int iter = 0;
 
-				Eigen::VectorXd dQ = ( mGoalConf - mStartConf );
+				dQ = ( mGoalConf - mStartConf );
 				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 					dQ = ( mGoalConf - mCurrConf );
-					Eigen::VectorXd vec = dQ / dQ.norm() * mWorkspaceThresh;
+					vec = dQ / dQ.norm() * mWorkspaceThresh;
 
-					Eigen::VectorXd mNewConf = mCurrConf + vec;
+					mNewConf = mCurrConf + vec;
 					wsPath.push_back( mNewConf );
 					mCurrConf = mNewConf;
+
+
+					iter++;
+				}
+			}
+
+			mWorld->getRobot(mRobotId)->getNode(mEEId);
+			mGoalConf(4) -= PI/4;
+
+			wsPath.push_back( mCurrConf );
+
+			std::cout << "mStartConf = " << mStartConf << std::endl;
+			std::cout << "mGoalConf = " << mGoalConf << std::endl;
+
+			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
+				int iter = 0;
+
+				dQ = ( mGoalConf - mStartConf );
+				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
+					dQ = ( mGoalConf - mCurrConf );
+					vec = dQ / dQ.norm() * mWorkspaceThresh;
+
+					mNewConf = mCurrConf + vec;
+					wsPath.push_back( mNewConf );
+					mCurrConf = mNewConf;
+
+
+					iter++;
+				}
+			}
+
+			mWorld->getRobot(mRobotId)->getNode(mEEId);
+			mGoalConf(6) -= PI/3;
+
+			wsPath.push_back( mCurrConf );
+
+			std::cout << "mStartConf = " << mStartConf << std::endl;
+			std::cout << "mGoalConf = " << mGoalConf << std::endl;
+
+			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
+				int iter = 0;
+
+				dQ = ( mGoalConf - mStartConf );
+				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
+					dQ = ( mGoalConf - mCurrConf );
+					 vec = dQ / dQ.norm() * mWorkspaceThresh;
+
+					 mNewConf = mCurrConf + vec;
+					wsPath.push_back( mNewConf );
+					mCurrConf = mNewConf;
+
+
+					iter++;
+				}
+			}
+
+			mWorld->getRobot(mRobotId)->getNode(mEEId);
+
+			mGoalConf(4) += PI/4;
+
+			wsPath.push_back( mCurrConf );
+
+			std::cout << "mStartConf = " << mStartConf << std::endl;
+			std::cout << "mGoalConf = " << mGoalConf << std::endl;
+
+			if( (qXYZ - jt->GetXYZ(mStartConf)).norm() > mWorkspaceThresh ) {
+				int iter = 0;
+
+				 dQ = ( mGoalConf - mStartConf );
+				while( dQ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
+					dQ = ( mGoalConf - mCurrConf );
+					 vec = dQ / dQ.norm() * mWorkspaceThresh;
+
+					 mNewConf = mCurrConf + vec;
+					wsPath.push_back( mNewConf );
+					mCurrConf = mNewConf;
+
 
 					iter++;
 				}
 			}
 
 
-
+		}
       // if( jt->GoToXYZR( start, qXYZ, qRPY, wsPath ) == true){
 				printf("Found solution JT! \n");
 				SetTimeline( wsPath ,true);
