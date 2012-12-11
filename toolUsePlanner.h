@@ -38,7 +38,7 @@ public:
 		Eigen::VectorXi mLinks;
 		Eigen::VectorXd mRelationshipXYZ;
 		Eigen::VectorXd mRelationshipRPY;
-		
+		Eigen::MatrixXd mRelationship;
 		int mNumLinks;
 		int mEEId;
 		int pickedUpObjectId;

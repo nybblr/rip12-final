@@ -108,23 +108,17 @@ std::vector< Eigen::VectorXd > JTFollower::PlanPath( const Eigen::VectorXd &_sta
  * @function GetPseudoInvJac
  */
 Eigen::MatrixXd JTFollower::GetPseudoInvJac( Eigen::VectorXd _q ) {
-  //printf("Num Dependent DOF minus 6D0F is : %d \n", mEENode->getNumDependentDofs() - 6 );
 
 	Eigen::MatrixXd Jaclin = mEENode->getJacobianLinear();
-	//std::cout<< "Jaclin_raw: \n"<< Jaclin << std::endl;
 	Eigen::MatrixXd Jacang = mEENode->getJacobianAngular();
-	//std::cout<< "Jacang_raw: \n"<< Jacang << std::endl;
 	Eigen::MatrixXd Jac(Jaclin.rows()*2,Jaclin.cols()); Jac << Jaclin, Jacang;
-	//std::cout<< "Jac_raw: \n"<< Jac << std::endl;
 	Jac = Jac.topRightCorner( 6, mEENode->getNumDependentDofs() -6 );
-	//std::cout<< "Jac: \n"<< Jac << std::endl;
 
 	Eigen::MatrixXd JacT = Jac.transpose();
 	Eigen::MatrixXd Jt;
 	Eigen::MatrixXd JJt = (Jac*JacT);
 	Eigen::FullPivLU<Eigen::MatrixXd> lu(JJt);
 	Jt = JacT*( lu.inverse() );
-	//std::cout<< "Jac pseudo inverse: \n"<<Jt << std::endl;
 	return Jt;
 }
 
@@ -147,46 +141,26 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 	//-- Initialize
 	dXYZ = ( _targetXYZ - GetXYZ(_q) ); // GetXYZ also updates the config to _q, so Jac use an updated value
 	dRPY = ( _targetRPY - GetRPY(_q) ); // GetRPY also updates the config to _q, so Jac use an updated value
-	//std::cout << "GoToXYZR" << std::endl;
 	dMov << dXYZ,dRPY;
-
-	//std::cout << dXYZ << std::endl;
-	//std::cout << dRPY << std::endl;
 	iter = 0;
-	//printf("New call to GoToXYZ: dXYZ: %f  \n", dXYZ.norm() );
+
 	while( dXYZ.norm() > mWorkspaceThresh && iter < mMaxIter ) {
 		mWorld->getRobot(mRobotId)->setDofs( _q, mLinks );
 		mWorld->getRobot(mRobotId)->update();
 
-		//std::cout << "Mov Error (raw): " << std::endl << dMov << std::endl;
-		//std::cout << "Mov Error (nor): " << std::endl << dMov.norm() << std::endl;
-
 		Eigen::MatrixXd Jt = GetPseudoInvJac(_q);
-
-		//std::cout << "Jt:" << std::endl << Jt << std::endl;
-		//std::cin.get();
-
-		//dConfig << Eigen::VectorXd::Zero(_q.size() - Jt.cols()), Jt*dMov;
 		if (Jt.cols() < _q.size()){
-		  //std::cout << "q.size(): " << _q.size() << std::endl;
-		//std::cout << "Jt.cols(): " << Jt.rows() << std::endl;
-		  dConfig = (Eigen::VectorXd(_q.size()) << Jt*dMov, Eigen::VectorXd::Zero(_q.size() - Jt.rows())).finished(); // Top row is base, bottom is end effector.
+		  dConfig = (Eigen::VectorXd(_q.size()) << Jt*dMov,
+			     Eigen::VectorXd::Zero(_q.size() - Jt.rows())).finished(); // Top row is base, bottom is end effector.
 		}else {
 		  dConfig = (Eigen::VectorXd(_q.size()) << Jt*dMov).finished(); // Top row is base, bottom is end effector.
 		}
-		//std::cout << "dConfig:" << std::endl << dConfig << std::endl;
-
 
 		if( dConfig.norm() > mConfigStep ) {
 			double n = dConfig.norm();
 			dConfig = dConfig *(mConfigStep/n);
-			//printf("NEW dConfig : %.3f \n", dConfig.norm() );
-			//std::cout << "NEW dConfig: " << dConfig << std::endl;
 		}
 
-		//std::cout << "_q: " << _q << std::endl;
-		
-		
 		_q = _q + dConfig;
 		_workspacePath.push_back( _q );
 
@@ -196,10 +170,8 @@ bool JTFollower::GoToXYZR( Eigen::VectorXd &_q,
 		dMov = (Eigen::VectorXd(6) << dXYZ, dRPY).finished();
 		iter++;
 	}
-
 	if( iter >= mMaxIter ) { return false; }
 	else { return true; }
-
 }
 
 /**
@@ -228,9 +200,6 @@ Eigen::VectorXd JTFollower::GetRPY( Eigen::VectorXd _q ) {
 	y = atan2( qTransform(1,0), qTransform(0,0) );
 
 	Eigen::VectorXd qRPY(3); qRPY << r,p,y;
-
-	//std::cout << "Euler Angles: " << std::endl << r << p << y << std::endl;
-	//std::cout << "Euler Angles: " << std::endl << RAD2DEG(r) << RAD2DEG(p) << RAD2DEG(y) << std::endl;
 	return qRPY;
 }
 

@@ -33,22 +33,22 @@
 
 // Control IDs (used for event handling - be sure to start with a non-conflicted id)
 enum planTabEvents {
-	button_SetStart = 50,
-	button_goToObject,
-	button_pickUpObject,
-	button_dropOffObject,
-	button_resetPlanner,
-	button_empty1,
-	button_empty2,
-	button_incrementObject,
-	button_Stop,
-	button_UpdateTime,
-	button_ExportSequence,
-	button_ShowPath,
-	checkbox_beGreedy,
-	checkbox_useConnect,
-	checkbox_useSmooth,
-	slider_Time
+  button_SetStart = 50,
+  button_goToObject,
+  button_pickUpObject,
+  button_dropOffObject,
+  button_resetPlanner,
+  button_empty1,
+  button_empty2,
+  button_incrementObject,
+  button_Stop,
+  button_UpdateTime,
+  button_ExportSequence,
+  button_ShowPath,
+  checkbox_beGreedy,
+  checkbox_useConnect,
+  checkbox_useSmooth,
+  slider_Time
 };
 
 // sizer for whole tab
@@ -70,142 +70,142 @@ IMPLEMENT_DYNAMIC_CLASS(ToolUsePlannerTab, GRIPTab)
  * @brief Constructor
  */
 ToolUsePlannerTab::ToolUsePlannerTab( wxWindow *parent, const wxWindowID id,
-		              const wxPoint& pos, const wxSize& size, long style) :
-	                      GRIPTab(parent, id, pos, size, style) {
+				      const wxPoint& pos, const wxSize& size, long style) :
+GRIPTab(parent, id, pos, size, style) {
 
-    mStartConf.resize(0);
-    mGoalConf.resize(0);
+  mStartConf.resize(0);
+  mGoalConf.resize(0);
 
-    mRobotId = 0;
-		mObjectId = 3;
-    mLinks.resize(0);
+  mRobotId = 0;
+  mObjectId = 3;
+  mLinks.resize(0);
 
-    mRrtStyle = 0;
-    mGreedyMode = false;
-    mConnectMode = false;
-    mSmooth = false;
-    mPlanner = NULL;
+  mRrtStyle = 0;
+  mGreedyMode = false;
+  mConnectMode = false;
+  mSmooth = false;
+  mPlanner = NULL;
 
-    sizerFullTool = new wxBoxSizer( wxHORIZONTAL );
+  sizerFullTool = new wxBoxSizer( wxHORIZONTAL );
 
-    // ** Create left static box for configuring the planner **
+  // ** Create left static box for configuring the planner **
 
-    // Create StaticBox container for all items
-    wxStaticBox* configureBox = new wxStaticBox(this, -1, wxT("Configure"));
+  // Create StaticBox container for all items
+  wxStaticBox* configureBox = new wxStaticBox(this, -1, wxT("Configure"));
 
-    // Create sizer for this box with horizontal layout
-    wxStaticBoxSizer* configureBoxSizer = new wxStaticBoxSizer(configureBox, wxHORIZONTAL);
+  // Create sizer for this box with horizontal layout
+  wxStaticBoxSizer* configureBoxSizer = new wxStaticBoxSizer(configureBox, wxHORIZONTAL);
 
-    // Create a sizer for radio buttons in 1st column
-    wxBoxSizer *col1Sizer = new wxBoxSizer(wxVERTICAL);
-    wxBoxSizer *miniSizer = new wxBoxSizer(wxVERTICAL); // annoying hack to get checkboxes close together
-    miniSizer->Add( new wxCheckBox(this, checkbox_beGreedy, _T("&goal bias (be greedy)")),
-		    1, // vertical stretch evenly
-		    wxALIGN_NOT,
-		    0);
-    miniSizer->Add( new wxCheckBox(this, checkbox_useConnect, _T("use &connect algorithm (be really greedy)")),
-		    1, // vertical stretch evenly
-		    wxALIGN_NOT,
-		    0 );
-    miniSizer->Add( new wxCheckBox(this, checkbox_useSmooth, _T("use &smoother (make it less ugly)")),
-		    1, // vertical stretch evenly
-		    wxALIGN_NOT,
-		    0 );
-    col1Sizer->Add(miniSizer,1,wxALIGN_NOT,0);
+  // Create a sizer for radio buttons in 1st column
+  wxBoxSizer *col1Sizer = new wxBoxSizer(wxVERTICAL);
+  wxBoxSizer *miniSizer = new wxBoxSizer(wxVERTICAL); // annoying hack to get checkboxes close together
+  miniSizer->Add( new wxCheckBox(this, checkbox_beGreedy, _T("&goal bias (be greedy)")),
+		  1, // vertical stretch evenly
+		  wxALIGN_NOT,
+		  0);
+  miniSizer->Add( new wxCheckBox(this, checkbox_useConnect, _T("use &connect algorithm (be really greedy)")),
+		  1, // vertical stretch evenly
+		  wxALIGN_NOT,
+		  0 );
+  miniSizer->Add( new wxCheckBox(this, checkbox_useSmooth, _T("use &smoother (make it less ugly)")),
+		  1, // vertical stretch evenly
+		  wxALIGN_NOT,
+		  0 );
+  col1Sizer->Add(miniSizer,1,wxALIGN_NOT,0);
 
-    // Create radio button for rrt_style
-    static const wxString RRTStyles[] =
+  // Create radio button for rrt_style
+  static const wxString RRTStyles[] =
     {
-        wxT("Single"),
-	wxT("Bi-directional")
+      wxT("Single"),
+      wxT("Bi-directional")
     };
-    col1Sizer->Add( new wxRadioBox(this, wxID_ANY, wxT("RRT &style:"),
-		    wxDefaultPosition, wxDefaultSize, WXSIZEOF(RRTStyles), RRTStyles, 1,
-		    wxRA_SPECIFY_ROWS),
-		    1, // stretch evenly with buttons and checkboxes
-		    wxALIGN_NOT,
-		    0 );
-    // Add col1 to configureBoxSizer
-    configureBoxSizer->Add( col1Sizer,
-			    3, // 3/5 of configure box
-			    wxALIGN_NOT,
-			    0 ); //
+  col1Sizer->Add( new wxRadioBox(this, wxID_ANY, wxT("RRT &style:"),
+				 wxDefaultPosition, wxDefaultSize, WXSIZEOF(RRTStyles), RRTStyles, 1,
+				 wxRA_SPECIFY_ROWS),
+		  1, // stretch evenly with buttons and checkboxes
+		  wxALIGN_NOT,
+		  0 );
+  // Add col1 to configureBoxSizer
+  configureBoxSizer->Add( col1Sizer,
+			  3, // 3/5 of configure box
+			  wxALIGN_NOT,
+			  0 ); //
 
-    // Create sizer for start buttons in 2nd column
-    wxBoxSizer *col2Sizer = new wxBoxSizer(wxVERTICAL);
-    col2Sizer->Add( new wxButton(this, button_SetStart, wxT("Set &Start")),
-		    0, // make horizontally unstretchable
-		    wxALL, // make border all around (implicit top alignment)
-		    1 ); // set border width to 1, so start buttons are close together
-    col2Sizer->Add( new wxButton(this, button_pickUpObject, wxT("Pick Up Object")),
-		    0, // make horizontally unstretchable
-		    wxALL, // make border all around (implicit top alignment)
-		    1 ); // set border width to 1, so start buttons are close together
-    col2Sizer->Add( new wxButton(this, button_empty1, wxT("Check collision")),
-		    0, // make horizontally unstretchable
-		    wxALL, // make border all around (implicit top alignment)
-		    1 ); // set border width to 1, so start buttons are close together
-
-
-    // Add col2Sizer to the configuration box
-    configureBoxSizer->Add( col2Sizer,
-			    1, // takes half the space of the configure box
-			    wxALIGN_NOT ); // no border and center horizontally
-
-    // Create sizer for goal buttons in 3rd column
-    wxBoxSizer *col3Sizer = new wxBoxSizer(wxVERTICAL);
-    col3Sizer->Add( new wxButton(this, button_goToObject, wxT("Go To Object")),
-		    0, // make horizontally unstretchable
-		    wxALL, // make border all around (implicit top alignment)
-		    1 ); // set border width to 1, so start buttons are close together
-    col3Sizer->Add( new wxButton(this, button_dropOffObject, wxT("Drop Off Object")),
-		    0, // make horizontally unstretchable
-		    wxALL, // make border all around (implicit top alignment)
-		    1 ); // set border width to 1, so start buttons are close together
-    col3Sizer->Add( new wxButton(this, button_empty2, wxT("Empty 2")),
-		    0, // make horizontally unstretchable
-		    wxALL, // make border all around (implicit top alignment)
-		    1 ); // set border width to 1, so start buttons are close together
-    configureBoxSizer->Add( col3Sizer,
-			    1, // size evenly with radio box and checkboxes
-			    wxALIGN_NOT ); // no border and center horizontally
-
-    // Add this box to parent sizer
-    sizerFullTool->Add( configureBoxSizer,
-		    4, // 4-to-1 ratio with execute sizer, since it just has 3 buttons
-		    wxEXPAND | wxALL,
-		    6 );
+  // Create sizer for start buttons in 2nd column
+  wxBoxSizer *col2Sizer = new wxBoxSizer(wxVERTICAL);
+  col2Sizer->Add( new wxButton(this, button_SetStart, wxT("Set &Start")),
+		  0, // make horizontally unstretchable
+		  wxALL, // make border all around (implicit top alignment)
+		  1 ); // set border width to 1, so start buttons are close together
+  col2Sizer->Add( new wxButton(this, button_pickUpObject, wxT("Pick Up Object")),
+		  0, // make horizontally unstretchable
+		  wxALL, // make border all around (implicit top alignment)
+		  1 ); // set border width to 1, so start buttons are close together
+  col2Sizer->Add( new wxButton(this, button_empty1, wxT("Check collision")),
+		  0, // make horizontally unstretchable
+		  wxALL, // make border all around (implicit top alignment)
+		  1 ); // set border width to 1, so start buttons are close together
 
 
-    // ** Create right static box for running the planner **
-    wxStaticBox* executeBox = new wxStaticBox(this, -1, wxT("Execute Planner"));
+  // Add col2Sizer to the configuration box
+  configureBoxSizer->Add( col2Sizer,
+			  1, // takes half the space of the configure box
+			  wxALIGN_NOT ); // no border and center horizontally
 
-    // Create sizer for this box
-    wxStaticBoxSizer* executeBoxSizer = new wxStaticBoxSizer(executeBox, wxVERTICAL);
+  // Create sizer for goal buttons in 3rd column
+  wxBoxSizer *col3Sizer = new wxBoxSizer(wxVERTICAL);
+  col3Sizer->Add( new wxButton(this, button_goToObject, wxT("Go To Object")),
+		  0, // make horizontally unstretchable
+		  wxALL, // make border all around (implicit top alignment)
+		  1 ); // set border width to 1, so start buttons are close together
+  col3Sizer->Add( new wxButton(this, button_dropOffObject, wxT("Drop Off Object")),
+		  0, // make horizontally unstretchable
+		  wxALL, // make border all around (implicit top alignment)
+		  1 ); // set border width to 1, so start buttons are close together
+  col3Sizer->Add( new wxButton(this, button_empty2, wxT("Empty 2")),
+		  0, // make horizontally unstretchable
+		  wxALL, // make border all around (implicit top alignment)
+		  1 ); // set border width to 1, so start buttons are close together
+  configureBoxSizer->Add( col3Sizer,
+			  1, // size evenly with radio box and checkboxes
+			  wxALIGN_NOT ); // no border and center horizontally
 
-    // Add buttons for "plan", "save movie", and "show path"
-    executeBoxSizer->Add( new wxButton(this, button_incrementObject, wxT("Increment Object")),
-	 		  1, // stretch to fit horizontally
-			  wxGROW ); // let it hog all the space in it's column
-
-    executeBoxSizer->Add( new wxButton(this, button_Stop, wxT("&Stop")),
-			  1, // stretch to fit horizontally
-			  wxGROW );
+  // Add this box to parent sizer
+  sizerFullTool->Add( configureBoxSizer,
+		      4, // 4-to-1 ratio with execute sizer, since it just has 3 buttons
+		      wxEXPAND | wxALL,
+		      6 );
 
 
-    wxBoxSizer *timeSizer = new wxBoxSizer(wxHORIZONTAL);
-    mTimeText = new wxTextCtrl(this,1008,wxT("5.0"),wxDefaultPosition,wxSize(40,20),wxTE_RIGHT);//,wxTE_PROCESS_ENTER | wxTE_RIGHT);
-    timeSizer->Add( mTimeText,2,wxALL,1 );
-    timeSizer->Add(new wxButton(this, button_UpdateTime, wxT("Set T(s)")),2,wxALL,1);
-    executeBoxSizer->Add(timeSizer,1,wxALL,2);
+  // ** Create right static box for running the planner **
+  wxStaticBox* executeBox = new wxStaticBox(this, -1, wxT("Execute Planner"));
 
-    executeBoxSizer->Add( new wxButton(this, button_ShowPath, wxT("&Print")),
-			  1, // stretch to fit horizontally
-			  wxGROW );
+  // Create sizer for this box
+  wxStaticBoxSizer* executeBoxSizer = new wxStaticBoxSizer(executeBox, wxVERTICAL);
 
-    sizerFullTool->Add(executeBoxSizer, 1, wxEXPAND | wxALL, 6);
+  // Add buttons for "plan", "save movie", and "show path"
+  executeBoxSizer->Add( new wxButton(this, button_incrementObject, wxT("Increment Object")),
+			1, // stretch to fit horizontally
+			wxGROW ); // let it hog all the space in it's column
 
-    SetSizer(sizerFullTool);
+  executeBoxSizer->Add( new wxButton(this, button_Stop, wxT("&Stop")),
+			1, // stretch to fit horizontally
+			wxGROW );
+
+
+  wxBoxSizer *timeSizer = new wxBoxSizer(wxHORIZONTAL);
+  mTimeText = new wxTextCtrl(this,1008,wxT("5.0"),wxDefaultPosition,wxSize(40,20),wxTE_RIGHT);//,wxTE_PROCESS_ENTER | wxTE_RIGHT);
+  timeSizer->Add( mTimeText,2,wxALL,1 );
+  timeSizer->Add(new wxButton(this, button_UpdateTime, wxT("Set T(s)")),2,wxALL,1);
+  executeBoxSizer->Add(timeSizer,1,wxALL,2);
+
+  executeBoxSizer->Add( new wxButton(this, button_ShowPath, wxT("&Print")),
+			1, // stretch to fit horizontally
+			wxGROW );
+
+  sizerFullTool->Add(executeBoxSizer, 1, wxEXPAND | wxALL, 6);
+
+  SetSizer(sizerFullTool);
 
 }
 
@@ -215,8 +215,8 @@ ToolUsePlannerTab::ToolUsePlannerTab( wxWindow *parent, const wxWindowID id,
  */
 void ToolUsePlannerTab::OnRadio(wxCommandEvent &evt) {
 
-	mRrtStyle = evt.GetSelection();
-	std::cout << "rrtStyle = " << mRrtStyle << std::endl;
+  mRrtStyle = evt.GetSelection();
+  std::cout << "rrtStyle = " << mRrtStyle << std::endl;
 }
 
 /**
@@ -238,7 +238,7 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 	break;
       }
       std::cout << "(i) Setting Start state for " << mWorld->getRobot(mRobotId)->getName() << ":" << std::endl;
-	  mStartConf.resize(0);
+      mStartConf.resize(0);
       mStartConf = mWorld->getRobot(mRobotId)->getDofs( mLinks );
 
       for( unsigned int i = 0; i < mStartConf.size(); i++ )
@@ -251,100 +251,77 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
 
     /** Go To Object */
   case button_goToObject:
-	  {
-    if ( mWorld != NULL ) {
-      if( mWorld->getNumRobots() < 1){
-		std::cout << "(!) Must have a world with a robot to set a Goal state.(!)" << std::endl;
-		break;
-      }
+    {
+      if ( mWorld != NULL ) {
+	if( mWorld->getNumRobots() < 1){
+	  std::cout << "(!) Must have a world with a robot to set a Goal state.(!)" << std::endl;
+	  break;
 	}
-	  mStartConf.resize(0);
+      }
+      mStartConf.resize(0);
       mStartConf = mWorld->getRobot(mRobotId)->getDofs( mLinks );
-	  std::cout << "(i) Start state :" << mStartConf << std::endl;
-	  std::cout << "(i) Setting Goal state for " << mWorld->getObject(mObjectId)->getName() << std::endl;
+      std::cout << "(i) Start state :" << mStartConf << std::endl;
+      std::cout << "(i) Setting Goal state for " << mWorld->getObject(mObjectId)->getName() << std::endl;
 
 
-	   // Get the transform of the current object
-	  Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
+      // Get the transform of the current object
+      Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
 
-	  double r,p,y;
-	  r = atan2( qTransform(2,1), qTransform(2,2) );
-	  p = -asin( qTransform(2,0) );
-	  y = atan2( qTransform(1,0), qTransform(0,0) );
-	  std::string mObjName = mWorld->getObject(mObjectId)->getName();
+      double r,p,y;
+      r = atan2( qTransform(2,1), qTransform(2,2) );
+      p = -asin( qTransform(2,0) );
+      y = atan2( qTransform(1,0), qTransform(0,0) );
+      std::string mObjName = mWorld->getObject(mObjectId)->getName();
 
-	  Eigen::VectorXd qRPY(3);
-	  Eigen::VectorXd qXYZ(3);
-	  if (mObjName == "bolt"){
-			qRPY << r,p-PI/2.0,y;
-			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
-	  }
-	  else if (mObjName == "driver"){
-			qRPY << r,p-PI/2.0,y;
-			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.15;
-	  }
-	  else {
-			qRPY << r,p,y+PI/2;
-			qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
-	  }
+      Eigen::VectorXd qRPY(3);
+      Eigen::VectorXd qXYZ(3);
+      if (mObjName == "bolt"){
+	qRPY << r,p-PI/2.0,y;
+	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.1;
+      }
+      else if (mObjName == "driver"){
+	qRPY << r,p-PI/2.0,y;
+	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.15;
+      }
+      else {
+	qRPY << r,p,y+PI/2;
+	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+      }
 
 
       JTFollower *jt = new JTFollower(*mWorld);
       jt->init( mRobotId, mLinks, mEEName, mEEId, 0.02 );
 
-	  // Move the arm to that configuration
-	  std::vector<Eigen::VectorXd> wsPath;
-	  Eigen::VectorXd start = mStartConf;
+      // Move the arm to that configuration
+      std::vector<Eigen::VectorXd> wsPath;
+      Eigen::VectorXd start = mStartConf;
 
-	  if( jt->GoToXYZR( start, qXYZ, qRPY, wsPath ) == true){
-			printf("Found solution JT! \n");
-			SetTimeline( wsPath ,true);
-			}
-	  else{
-			printf("NO Found solution JT! Plotting anyway \n");
-			SetTimeline( wsPath ,true);
-			}
-	  }
+      if( jt->GoToXYZR( start, qXYZ, qRPY, wsPath ) == true){
+	printf("Found solution JT! \n");
+	SetTimeline( wsPath ,true);
+      }
+      else{
+	printf("NO Found solution JT! Plotting anyway \n");
+	SetTimeline( wsPath ,true);
+      }
+    }
     break;
 
     /** Pick Up Object */
   case button_pickUpObject:
-	  {
-    pickedUp = true;
-	pickedUpObjectId = mObjectId;
-	// Get the transform of the current object
-	Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
+    {
+      pickedUp = true;
+      pickedUpObjectId = mObjectId;
+      // Get the transform of the current object
+      Eigen::MatrixXd qTransform = mWorld->getObject(mObjectId)->getRoot()->getWorldTransform();
 
-	double ro,pi,ya;
-	ro = atan2( qTransform(2,1), qTransform(2,2) );
-	pi = -asin( qTransform(2,0) );
-	ya = atan2( qTransform(1,0), qTransform(0,0) );
+      // Get the transform of the end effector
+      Eigen::MatrixXd eTransform = mWorld->getRobot(mRobotId)->getNode(mEEId)->getWorldTransform();
 
-	Eigen::VectorXd qRPY(3);
-	Eigen::VectorXd qXYZ(3);
-	qRPY << ro,pi,ya;
-	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3);
+      // Set mRelationship equal to the affine transform matrix to produce given offset
+      mRelationship = eTransform.inverse()*qTransform;
 
-	// Get the transform of the end effector
-	Eigen::MatrixXd eTransform = mWorld->getRobot(mRobotId)->getNode(mEEId)->getWorldTransform();
-
-	double r,p,y;
-	r = atan2( eTransform(2,1), eTransform(2,2) );
-	p = -asin( eTransform(2,0) );
-	y = atan2( eTransform(1,0), eTransform(0,0) );
-
-	Eigen::VectorXd eRPY(3);
-	Eigen::VectorXd eXYZ(3);
-	eRPY << r,p,y;
-	eXYZ << eTransform(0,3), eTransform(1,3), eTransform(2,3);
-
-	mRelationshipXYZ = eXYZ-qXYZ;
-	mRelationshipRPY = eRPY-qRPY;
-
-	std::cout << "Relationship XYZ: " << mRelationshipXYZ << std::endl;
-	std::cout << "Relationship RPY: " << mRelationshipRPY << std::endl;
-	  }
-
+    }
     break;
 
     /** Drop Off Object */
@@ -388,13 +365,13 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
     /** Increment Object ID */
   case button_incrementObject:
     {
-		int numObjects = mWorld->getNumObjects();
-		mObjectId += 1;
-		if (mObjectId == numObjects)
-		{
-			mObjectId = 0;
-		}
-		std::cout << "(i) Selected Object:" << mWorld->getObject(mObjectId)->getName() << std::endl;
+      int numObjects = mWorld->getNumObjects();
+      mObjectId += 1;
+      if (mObjectId == numObjects)
+	{
+	  mObjectId = 0;
+	}
+      std::cout << "(i) Selected Object:" << mWorld->getObject(mObjectId)->getName() << std::endl;
     }
     break;
 
@@ -424,7 +401,7 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
  */
 void ToolUsePlannerTab::SetTimeline(std::vector< Eigen::VectorXd > _path, bool resetPath) {
 
-    if( mWorld == NULL  ) {
+  if( mWorld == NULL  ) {
     printf("--(!) Must create a valid plan before updating its duration (!)--");
     return;
   }
@@ -442,35 +419,26 @@ void ToolUsePlannerTab::SetTimeline(std::vector< Eigen::VectorXd > _path, bool r
   for( int i = 0; i < _path.size(); i++ ) {
     mWorld->getRobot( mRobotId )->setDofs( _path[i], mLinks );
     mWorld->getRobot(mRobotId)->update();
-	
 
-	if (pickedUp){
-	// Get the transform of the end effector
-	Eigen::MatrixXd eTransform = mWorld->getRobot(mRobotId)->getNode(mEEId)->getWorldTransform();
 
-	double r,p,y;
-	r = atan2( eTransform(2,1), eTransform(2,2) );
-	p = -asin( eTransform(2,0) );
-	y = atan2( eTransform(1,0), eTransform(0,0) );
+    if (pickedUp){
+      // Get the transform of the end effector
+      Eigen::MatrixXd eTransform = mWorld->getRobot(mRobotId)->getNode(mEEId)->getWorldTransform();
 
-	Eigen::VectorXd eRPY(3);
-	Eigen::VectorXd eXYZ(3);
-	eRPY << r,p,y;
-	eXYZ << eTransform(0,3), eTransform(1,3), eTransform(2,3);
+      // Produce transform of the tool based on offset from end effector via affine transformation
+      Eigen::MatrixXd qPos = eTransform * mRelationship;
 
-	Eigen::VectorXd qRPY(3);
-	Eigen::VectorXd qXYZ(3);
-	qRPY = eRPY-mRelationshipRPY;
-	qXYZ = eXYZ-mRelationshipRPY;
+      double r,p,y;
+      r = atan2( qPos(2,1), qPos(2,2) );
+      p = -asin( qPos(2,0) );
+      y = atan2( qPos(1,0), qPos(0,0) );
 
-	std::cout << "Relationship XYZ: " << eXYZ-qXYZ << std::endl;
-	std::cout << "Relationship RPY: " << eRPY-qRPY << std::endl;
-	
-	mWorld->getObject(pickedUpObjectId)->setPositionXYZ(qXYZ(0),qXYZ(1),qXYZ(2));
-	mWorld->getObject(pickedUpObjectId)->setRotationRPY(qRPY(0),qRPY(1),qRPY(2));
-	mWorld->getObject(pickedUpObjectId)->update();
+      // Set object XYZ, RPY from values calculated from affine transformation
+      mWorld->getObject(pickedUpObjectId)->setPositionXYZ(qPos(0,3), qPos(1,3), qPos(2,3));
+      mWorld->getObject(pickedUpObjectId)->setRotationRPY(r,p,y);
+      mWorld->getObject(pickedUpObjectId)->update();
 
-	}
+    }
     frame->AddWorld( mWorld );
   }
 
