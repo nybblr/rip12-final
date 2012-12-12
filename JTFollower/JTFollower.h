@@ -68,7 +68,7 @@ public:
     JTFollower();
     JTFollower( robotics::World &_world,
                 bool _copyWorld = false,
-                double _configStep = 0.1 ); // 0.046 = 1_degree * sqrt(7)
+                double _configStep = 0.046 ); // 0.046 = 1_degree * sqrt(7)
 
     void init( int _robotId,
 	       const Eigen::VectorXi &_links,
@@ -84,6 +84,7 @@ public:
 					     const std::vector<Eigen::VectorXd> &_workspacePath ); // Pose
 
     Eigen::MatrixXd GetPseudoInvJac( Eigen::VectorXd _q ) ;
+    Eigen::MatrixXd GetJac( Eigen::VectorXd _q ) ;
     bool GoToXYZ( Eigen::VectorXd &_q,
 		  Eigen::VectorXd _targetXYZ,
 		  std::vector<Eigen::VectorXd> &_workspacePath );
