@@ -86,7 +86,7 @@ GRIPTab(parent, id, pos, size, style) {
   mSmooth = false;
   mPlanner = NULL;
 
-	mWorkspaceThresh = 0.08;
+	mWorkspaceThresh = 0.1;
 	mMaxIter = 5000;
 
   sizerFullTool = new wxBoxSizer( wxHORIZONTAL );
@@ -284,6 +284,10 @@ void ToolUsePlannerTab::OnButton(wxCommandEvent &evt) {
       }
       else if (mObjName == "driver"){
 	qRPY << r,p-PI/2.0,y;
+	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.15;
+      }
+      else if (mObjName == "block"){
+	qRPY << r,p,y+PI/2;
 	qXYZ << qTransform(0,3), qTransform(1,3), qTransform(2,3)+.15;
       }
       else {
