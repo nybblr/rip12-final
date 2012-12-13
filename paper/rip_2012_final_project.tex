@@ -1,4 +1,4 @@
-% Created 2012-12-13 Thu 17:56
+% Created 2012-12-13 Thu 18:09
 \documentclass[10pt, conference]{IEEEtran}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -319,6 +319,17 @@ A direct inverse of the Jacobian is not possible in our case, as
      \begin{equation}
      \label{eq:velocity}
      \dot{\alpha} = J_{\alpha}^{\dagger}V_e(t)
+     \end{equation}
+
+     This is added to the previous time step's joint configuration and
+     the robot is updated. The process continues until the global
+     coordinates (both rotation and translation) of the end effector
+     of the manipulator is less than a threshold distance $\epsilon$
+     of the desired position. In other words,
+
+     \begin{equation}
+     \label{eq:distance}
+     \| \mathbf{x_f - x_i} \| < \epsilon
      \end{equation}
 
 

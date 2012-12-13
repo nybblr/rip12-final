@@ -284,6 +284,17 @@ actuators [label="Actuators (motors)"];
      \dot{\alpha} = J_{\alpha}^{\dagger}V_e(t)
      \end{equation}
 
+     This is added to the previous time step's joint configuration and
+     the robot is updated. The process continues until the global
+     coordinates (both rotation and translation) of the end effector
+     of the manipulator is less than a threshold distance \epsilon
+     of the desired position. In other words,
+
+     \begin{equation}
+     \label{eq:distance}
+     \| \mathbf{x_f - x_i} \| < \epsilon
+     \end{equation}
+
 **** Joint limits
      This equation for the joint velocities is not always well
      behaved. In order to improve the results, we will use a variation
