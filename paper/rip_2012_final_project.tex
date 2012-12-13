@@ -1,44 +1,70 @@
-#+TITLE:     Tool Use via Inverse Kinematics
-#+AUTHOR:    Adam Cantor, Jonathan Martin, Leo Keselman, Stewart Butler
-#+EMAIL:     acantor6@gatech.edu, jmartin98@gatech.edu, chipper10@gatech.edu, sbutler6@gatech.edu
-#+DATE:      2012-12-10 Mon
+% Created 2012-12-13 Thu 15:22
+\documentclass[10pt, conference]{IEEEtran}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fixltx2e}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{soul}
+\usepackage{textcomp}
+\usepackage{marvosym}
+\usepackage{wasysym}
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\tolerance=1000
+\usepackage{balance}
+\usepackage[numbers]{natbib}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{subfigure}
+\usepackage{multirow} %For tables
+\usepackage{pdflscape}
+\usepackage{rotating}
+\usepackage{tabularx}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage[amssymb]{SIunits}
+\usepackage{fancyhdr}
+\usepackage[format=hang,font=small,labelfont=bf]{caption}
+\usepackage{hyperref}
+\newcount\colveccount
+\newcommand*\colvec[1]{\global\colveccount#1 \begin{pmatrix} \colvecnext }
+\def\colvecnext#1{ #1 \global\advance\colveccount-1 \ifnum\colveccount>0 \expandafter\colvecnext \else \end{pmatrix}\fi}
+\providecommand{\alert}[1]{\textbf{#1}}
 
-#+LATEX_CLASS: ieee
-#+LATEX_CLASS_OPTIONS: [10pt, conference]
+\title{Tool Use via Inverse Kinematics}
+\author{Adam Cantor, Jonathan Martin, Leo Keselman, Stewart Butler}
+\date{2012-12-10 Mon}
+\hypersetup{
+  pdfkeywords={},
+  pdfsubject={},
+  pdfcreator={Emacs Org-mode version 7.8.11}}
 
-#+LATEX_HEADER: \usepackage{balance}
-#+LATEX_HEADER: \usepackage[numbers]{natbib}
-#+LATEX_HEADER: \usepackage{graphicx}
-#+LATEX_HEADER: \usepackage{dsfont}
-#+LATEX_HEADER: \usepackage{mathtools}
-#+LATEX_HEADER: \usepackage{amsmath}
-#+LATEX_HEADER: \usepackage{subfigure}
-#+LATEX_HEADER: \usepackage{multirow} %For tables
-#+LATEX_HEADER: \usepackage{pdflscape}
-#+LATEX_HEADER: \usepackage{rotating}
-#+LATEX_HEADER: \usepackage{tabularx}
-#+LATEX_HEADER: \usepackage{amsfonts}
-#+LATEX_HEADER: \usepackage{booktabs}
-#+LATEX_HEADER: \usepackage[amssymb]{SIunits}
-#+LATEX_HEADER: \usepackage{fancyhdr}
-#+LATEX_HEADER: \usepackage[format=hang,font=small,labelfont=bf]{caption}
-#+LATEX_HEADER: \usepackage{hyperref}
+\begin{document}
 
-#+LATEX_HEADER: \newcount\colveccount
-#+LATEX_HEADER: \newcommand*\colvec[1]{\global\colveccount#1 \begin{pmatrix} \colvecnext }
-#+LATEX_HEADER: \def\colvecnext#1{ #1 \global\advance\colveccount-1 \ifnum\colveccount>0 \expandafter\colvecnext \else \end{pmatrix}\fi}
+\maketitle
 
-#+OPTIONS: toc:nil
 
-#+BEGIN_abstract
+
+
+
+
+\begin{abstract}
 This report details an approach to known object interaction with a
 Schunk Arm. A motion planning theorem is applied with a focus on
 workspace control. The implementation of this system was done in the
 GRIP/DART simulation environment designed/used by the Golems Lab at
 Georgia Tech.
-#+END_abstract
+\end{abstract}
 
-* Introduction
+\section{Introduction}
+\label{sec-1}
+
   The purpose of this work is to create a methodology for interacting
   with known objects in a loosely defined workspace. This goal is
   directly in line with the DARPA robotics challenge to apply humanoid
@@ -53,26 +79,19 @@ Georgia Tech.
   robot a degree of operational flexibility that would be otherwise
   impossible.
 
-#+CAPTION:    Layer model of robot control systems.
-#+LABEL:      fig:layer_model
-#+ATTR_LaTeX: width=8cm
-#+begin_dot robot_layer_model.png -Tpng
-digraph G {
-sensors ->planner;
-planner -> control;
-control -> actuators;
 
-sensors [label="Sensors (Vision, haptic, environmental)"];
-planner [label="High-level planner (constraint resolution, goal ordering)"];
-control [label="Controls system (motion planning)"];
-actuators [label="Actuators (motors)"];
-}
-#+end_dot
+\begin{figure}[htb]
+\centering
+\includegraphics[width=8cm]{robot_layer_model_04acea6317138ac7fb5e808de063a70455ba7e53.png}
+\caption{\label{fig:layer_model}Layer model of robot control systems.}
+\end{figure}
+
 
   Using human-configured tools requires multiple layers of control and
   planning, as shown in figure \ref{fig:layer_model}.
 
-  1) Sensors - The robot must be capable of discerning its environment,
+\begin{enumerate}
+\item Sensors - The robot must be capable of discerning its environment,
      discovering what constraints that environment will impose upon it,
      and constructing sub-goals in order to accomplish its target
      task. In an un-augmented anthropocentric environment, this means
@@ -83,21 +102,22 @@ actuators [label="Actuators (motors)"];
      actuators during manipulation tasks as part of a control loop to
      ensure that the manipulated objects are behaving according to
      plan.
-  2) Planner - The robot needs a high level planner in order to take a
+\item Planner - The robot needs a high level planner in order to take a
      goal state, break it into sub goals, match those sub goals with
      tasks it is able to handle, resolve any dependency conflicts, and
      order those goals into as efficient a plan as possible.
-  3) The control system is responsible for implementing each of the
+\item The control system is responsible for implementing each of the
      tasks necessary to accomplish a given sub-goal. This involves
      things like the lower-level motion planning necessary for
      manipulation, including workspace control.
-  4) Actuators - The robot must be capable of using its actuators to
+\item Actuators - The robot must be capable of using its actuators to
      accomplish commands sent to them from the control
      system. Physically, one must be able to manipulate the tool in
      question. General purpose manipulators are not generally well
      suited for using tools designed for humanoid hands, and most
      commonly available humanoid hands have issues with grip strength,
      digit control, haptic sensing, and friction.
+\end{enumerate}
 
   This document describes an effort to explore the challenges associated
   with general purpose tool usage from within a simulated
@@ -120,8 +140,9 @@ actuators [label="Actuators (motors)"];
   tasks needed to reach its goal state, but those states must be
   manually traversed by a human in order for the simulation to
   work. These issues will be further discussed in later sections.
+\section{Related Work}
+\label{sec-2}
 
-* Related Work
   Tool manipulation in workspace is very common in both research and
   industry. However, most of this tool manipulation is with specialized
   tools that are not designed for human manipulation, and the robots are
@@ -136,7 +157,7 @@ actuators [label="Actuators (motors)"];
   motion planning for the robot as well as the constraints of the
   tool. For example, when driving the screw into the target block, we
   must follow the screw with the driver (held in the manipulator) as it
-  threads into the target block by matching 'downward' translation with
+  threads into the target block by matching `downward' translation with
   the rotation of the screw driver, then back the tool out and repeat
   until the screw is settled into the block. It also took into account
   the set of actions required to set up the environment -- finding the
@@ -145,10 +166,11 @@ actuators [label="Actuators (motors)"];
 
   [Tucker]
   [general grasp]
+\section{Methods}
+\label{sec-3}
+\subsection{Simulation Software}
+\label{sec-3-1}
 
-
-* Methods
-** Simulation Software
 
   In the current experiments, there are three interactive objects and
   one robot arm. The interactive objects are a screwdriver, a bolt, and
@@ -156,10 +178,11 @@ actuators [label="Actuators (motors)"];
 
   Our system then follows the following set of actions to generate a
   plan.
+\subsection{High Level Planning}
+\label{sec-3-2}
+\subsubsection{Locate screw}
+\label{sec-3-2-1}
 
-** High Level Planning
-
-*** Locate screw
     After the screw is inserted into the world file, it is passed to the
     robot as a motion goal point. The robot queries the world to find the
     object and obtains the transform of the current tool position in the
@@ -168,55 +191,66 @@ actuators [label="Actuators (motors)"];
     converted into a 6x1 vector:
     \begin{equation}
     q = \begin{bmatrix}
-               	a \\
-               	w
+                a \\
+                w
               \end{bmatrix}
     \end{equation}
 
     Here, \(a\) is a three dimensional translation vector and \(w\)
     is a roll, pitch, and yaw vector relative the world origin which
     define the origin of the screw.
+\subsubsection{Grasp the screw}
+\label{sec-3-2-2}
 
-*** Grasp the screw
     Jacobian workspace control is used to align the robot's manipulator
     with the coordinate frame of the screw. After matching rotation and
     position with the target, the robot grabs the screw. Subsequently,
     the screw is manipulated as though it were an additional link in the
     arm.
+\subsubsection{Locate goal}
+\label{sec-3-2-3}
 
-*** Locate goal
-   3) Move the bolt to alignment with the goal.
+\begin{enumerate}
+\item Move the bolt to alignment with the goal.
+\end{enumerate}
+\subsubsection{Release bolt}
+\label{sec-3-2-4}
+\subsubsection{Grasping tool}
+\label{sec-3-2-5}
 
-*** Release bolt
-
-*** Grasping tool
     Grasp the screwdriver; updating the end effector after each
       interaction.
+\subsubsection{Move tool to screw}
+\label{sec-3-2-6}
 
-*** Move tool to screw
     After moving the screwdriver into the bolt, update the arm to include
       the bolt as well
+\subsubsection{Drive screw into goal point}
+\label{sec-3-2-7}
 
-*** Drive screw into goal point
     Moving it into the goal position.
+\subsubsection{Release bolt}
+\label{sec-3-2-8}
 
-*** Release bolt
    Release the bolt
+\subsubsection{Release tool}
+\label{sec-3-2-9}
 
-*** Release tool
     Replace the screwdriver back to its original position.
+\subsection{Low Level (Motion) Planning}
+\label{sec-3-3}
+\subsubsection{Resolved Rate Trajectory Planning [ Pseudo-Inverse Jacobian Control]}
+\label{sec-3-3-1}
 
-
-** Low Level (Motion) Planning
-*** Resolved Rate Trajectory Planning [ Pseudo-Inverse Jacobian Control]
     Resolved rate trajectory planning, or pseudo-inverse jacobian control,
     was used to move the manipulator from a current world configuration
     \( x_i = \colvec{6}{x_i}{y_i}{z_i}{R_i}{P_i}{Y_i} \) to a target goal
     configuratfon \( x_f = \colvec{6}{x_f}{y_f}{z_f}{R_f}{P_f}{Y_f}\).
+\section{Experiments}
+\label{sec-4}
+\section{Analysis}
+\label{sec-5}
+\section{Discussion}
+\label{sec-6}
 
-
-* Experiments
-
-* Analysis
-
-* Discussion
+\end{document}
