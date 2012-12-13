@@ -25,8 +25,8 @@
 #+LATEX_HEADER: \usepackage{hyperref}
 
 #+LATEX_HEADER: \newcount\colveccount
-#+LATEX_HEADER: \newcommand*\colvec[1]{\global\colveccount#1 \begin{pmatrix} \colvecnext }
-#+LATEX_HEADER: \def\colvecnext#1{ #1 \global\advance\colveccount-1 \ifnum\colveccount>0 \expandafter\colvecnext \else \end{pmatrix}\fi}
+#+LATEX_HEADER: \newcommand*\colvec[1]{\global\colveccount#1 \begin{bmatrix} \colvecnext }
+#+LATEX_HEADER: \def\colvecnext#1{ #1 \global\advance\colveccount-1 \ifnum\colveccount>0 \expandafter\colvecnext \else \end{bmatrix}^{\top}\fi}
 
 #+OPTIONS: toc:nil
 
@@ -208,12 +208,140 @@ actuators [label="Actuators (motors)"];
 
 
 ** Low Level (Motion) Planning
-*** Resolved Rate Trajectory Planning [ Pseudo-Inverse Jacobian Control]
-    Resolved rate trajectory planning, or pseudo-inverse jacobian control,
-    was used to move the manipulator from a current world configuration
-    \( x_i = \colvec{6}{x_i}{y_i}{z_i}{R_i}{P_i}{Y_i} \) to a target goal
-    configuratfon \( x_f = \colvec{6}{x_f}{y_f}{z_f}{R_f}{P_f}{Y_f}\).
+*** Resolved Rate Trajectory Planning
+    Resolved rate trajectory planning, or pseudo-inverse Jacobian
+    control, was used to move the manipulator from a current world
+    configuration \( \mathbf{x_i} =
+    \colvec{6}{x_i}{y_i}{z_i}{R_i}{P_i}{Y_i} \) to a target goal
+    configuratfon \( \mathbf{x_f} =
+    \colvec{6}{x_f}{y_f}{z_f}{R_f}{P_f}{Y_f}\) in a linear fashion. The
+    world coordinates are described as \( 6 \times 1 \) vectors of X,Y,
+    and Z positions with corresponding Roll, Pitch and Yaw.
 
+    Resolved rate trajectory control stems from
+    \ref{ eq:rate_trajectory}, where \(\mathbf{V_e}(t)\) is the end
+    effector velocity at time \(t\), \(\mathbf{\alpha}\) is the joint
+    space position vector describing the current configuration of the
+    robot, and \(\textbf{\dot{\alpha}}\) is the joint space velocity
+    vector.
+
+    \begin{equation}
+    \label{ eq:rate_trajectory}
+    \mathbf{V_{e}}(t)\mathbf{ = J_{\alpha}\dot{\alpha}}
+    \end{equation}
+
+    This can be rearranged into \ref{eq:rate_trajectory_inv}.
+
+    \begin{equation}
+    \label{eq:rate_trajectory_inv}
+    \mathbf{\dot{\alpha} = J^{-1}V_e(t)}.
+    \end{equation}
+
+    Thus, if the inverse Jacobian and desired end effector trajectory
+    are know, it is possible to make a differential equation for the
+    joint angles of the manipulator. In this case, the trajectory is to
+    be linear, so \(\mathbf{V_e(t)}\) was a constant \(6 \times 1\) vector equal
+    to \(\mathbf{x_f}-\mathbf{x_i}\).
+
+**** Extracting a target coordinate
+     The world coordinate of a given node is generated from DART/GRIP as
+     an affine transformation described by the \(4 \times 4\)
+     homogeneous coordinate matrix \(C = \begin{bmatrix}
+     \multicolumn{3}{c}{\mathbf{R}} & \mathbf{X_{xyz}} \\ 0 & 0 & 0 & 1 \end{bmatrix}\),
+     so the \(6 \times 1\) XYZRPY vector representation must first be
+     extracted.
+
+     \(\mathbf{X_{xyz}}\) is a \(3 \times 1\) vector describing a point in
+     3-space, and does not require any manipulation. \(\mathbf{R}\) is a \(3
+     \times 3\) rotation matrix, so we convert this to roll-pitch-yaw as
+     shown in equation \ref{eq:rpy}:
+
+     \begin{equation}
+     \label{eq:rpy}
+     \mathbf{X_{rpy}} = \begin{bmatrix} \tan^{-1}(\frac{R_{2,1}}{R_{2,2}}) \\
+     -\sin^{-1}(R_{2,0}) \\ \tan^{-1}(\frac{R_{1,0}}{R_{0,0}}) \end{bmatrix},
+     \end{equation}
+
+     This yields our target coordinates \(\mathbf{x_{f}}
+     = \begin{bmatrix}X_{xyz} \\ X_{rpy} \end{bmatrix} \).
+
+**** Inverting the Jacobian
+     A direct inverse of the Jacobian is not possible in our case, as
+     our manipulator had 7 degrees of freedom producing a \(7 \times 6\)
+     matrix. Instead, a Moore-Penrose pseudo-inverse was calculated
+     according to equation \ref{eq:pseudoinv}.
+
+     \begin{equation}
+     \label{eq:pseudoinv}
+     J^{\dagger} = J^{\top}(JJ^{\top})^{-1}
+     \end{equation}
+
+     From this we compute for each time step the change in joint angles
+     via equation \ref{eq:velocity}:
+
+     \begin{equation}
+     \label{eq:velocity}
+     \dot{\alpha} = J_{\alpha}^{\dagger}V_e(t)
+     \end{equation}
+
+**** Joint limits
+     This equation for the joint velocities is not always well
+     behaved. In order to improve the results, we will use a variation
+     of the joint-limits avoidance strategy described in
+     \cite{luc_baron}.
+
+     We now know from \ref{eq:velocity} the regular form of our
+     velocity equation used to generate a trajectory toward our primary
+     task. We will now augment that with an additional secondary task
+     that will bias the trajectory towards keeping the joints as close
+     to their zero points as possible.
+
+     First, we augment equation \ref{eq:velocity}, so our equation
+     describing the change in joint angles is now \ref{eq:vel_jl}.
+
+     \begin{equation}
+     \label{eq:vel_jl}
+     \mathbf{\dot{\alpha} = J_{\alpha}^{\dagger}V_e(t) + (1 -
+     J_{\alpha}^{\dagger}J_{\alpha})h}
+     \end{equation}
+
+     The vector \(h\) is our secondary task, multiplied by \(\mathbf{
+     (1 - J_{\alpha}^{\dagger}J_{\alpha})}\), the orthogonal complement
+     of J_{\alpha}. The result is a projection of \(\mathbf{h}\) into
+     the null space of \(\mathbf{J_\alpha}\), a "virtual motion" which
+     results in a bias toward the secondary objective.
+
+     The secondary task is constructed as  \(\mathbf{h} = \gradient z\),
+     where \(z\) is a fitness function described in \ref{eq:z}.
+
+     \begin{equation}
+     \label{eq:z}
+     \mathbf{ z = \frac{1}{2}(\alpha - \bar{\alpha})^{\top}W(\alpha -
+     \bar{\alpha})}
+     \end{equation}
+
+     The variable \(\mathbf{\bar{\alpha}}\) is the joint position vector
+     describing the mid-joint position; in our case, this is an all-zero
+     vector, as the entire arm is constructed from symmetrically
+     revolute joints centered around zero.
+
+     The matrix \( \mathbf{W} \) is a diagonal weight matrix describing
+     the acceptable deviation from this zero point -- if it is desirable
+     for a particular joint to have a greater latitude during movement
+     than another, altering the corresponding row in the weight matrix
+     will generate that effect. In our case, an identity matrix was
+     used, as we only needed a general bias away from the joint limits.
+
+     The effect is that \(\mathbf{h}\) describes a gradient where the
+     zero positions on each joint is a minima, growing steeper as you
+     progress further away from this center point. When projected into
+     the null space of \(\mathbf{J_\alpha}\), it will cause joints that
+     are otherwise unconstrained by the target motion to descend toward
+     their zero positions, preventing the robot from approaching too
+     close to the joint limits and preventing some of the anomalous
+     behavior produced by unconstrained inverse Jacobian control.
+
+** Object manipulation
 
 * Experiments
 
