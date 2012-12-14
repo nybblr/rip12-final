@@ -1,4 +1,4 @@
-#+TITLE:     Tool Use via Inverse Kinematics
+#+TITLE:     Constrained Tool Planning in Work Space Using Inverse Jacobian Control
 #+AUTHOR:    Adam Cantor, Jonathan Martin, Leo Keselman, Stewart Butler
 #+EMAIL:     acantor6@gatech.edu, jmartin98@gatech.edu, chipper10@gatech.edu, sbutler6@gatech.edu
 #+DATE:      2012-12-10 Mon
@@ -121,7 +121,7 @@ actuators [label="Actuators (motors)"];
   manually traversed by a human in order for the simulation to
   work. These issues will be further discussed in later sections.
 
-* Related Work
+* Related Work TODO
   Tool manipulation in workspace is very common in both research and
   industry. However, most of this tool manipulation is with specialized
   tools that are not designed for human manipulation, and the robots are
@@ -148,7 +148,7 @@ actuators [label="Actuators (motors)"];
 
 
 * Methods
-** Simulation Software
+** Simulation Software TODO
 
   In the current experiments, there are three interactive objects and
   one robot arm. The interactive objects are a screwdriver, a bolt, and
@@ -157,7 +157,8 @@ actuators [label="Actuators (motors)"];
   Our system then follows the following set of actions to generate a
   plan.
 
-** High Level Planning
+** High Level Planning TODO
+
 
 *** Locate screw
     After the screw is inserted into the world file, it is passed to the
@@ -337,7 +338,7 @@ actuators [label="Actuators (motors)"];
      revolute joints centered around zero.
 
      The matrix \( \mathbf{W} \) is a diagonal weight matrix describing
-     the acceptable deviation from this zero point -- if it is desirable
+     the acceptable deviation from this zero point -- if it ;is desirable
      for a particular joint to have a greater latitude during movement
      than another, altering the corresponding row in the weight matrix
      will generate that effect. In our case, an identity matrix was
@@ -353,9 +354,66 @@ actuators [label="Actuators (motors)"];
      behavior produced by unconstrained inverse Jacobian control.
 
 ** Object manipulation
+   In the real world, the actual manipulation of an object is a trivial
+   task -- once you grasp the object, it will behave as defined by the
+   laws of physics, and can be treated as an extension of the end
+   effector. However, the DART/GRIP simulation package does not
+   currently support true connection of manipulated world objects as
+   parts of the kinematic model of the robot, so the position of the
+   world object must be manually updated according to the position of
+   the end effector that is "grasping" it.
+
+   Maintaining the relationship between the end effector and the grasped
+   object is difficult using XYZ-RPY coordinates since any accidental
+   change in the order of rotation will cause resulting transform to
+   change. However, describing the different positions and orientations
+   of the end effector and target object as the \(4 \times 4\) matrices
+   of homogeneous coordinates describing the affine transformation used
+   to take them from the global origin to their current global
+   coordinates simplifies the task immensely.
+
+   Instead of making multiple operations to transform the grasped object
+   via relative rotations and translations from its previous position,
+   we need now only describe the affine transformation \(\mathbf{R}\)
+   which takes an object at coordinates \(\mathbf{O}\) to the end
+   effector coordinates \(\mathbf{E}\), as calculated in equation
+   \ref{eq:affinerel}.
+
+   \begin{equation}\label{eq:affinerel}
+   \mathbf{R} = \mathbf{E}^{-1}\mathbf{O}
+   \end{equation}
+
+   Subsequently, updating the position of object \(\mathbf{O}\) to
+   \(\mathbf{O'}\) is a simple matrix multiplication of the new end
+   effector location \(\mathbf{E'}\) by the relationship \(\mathbf{R}\),
+   as shown in equation \ref{eq:affineup}.
+
+   \begin{equation}\label{eq:affineup}
+   \mathbf{O'} = \mathbf{E'}\mathbf{R}
+   \end{equation}
+
+   Setting the new location requires transforming the homogeneous
+   coordinates back into global XYZ-RPY coordinates, as DART/GRIP do not
+   currently expose a function for setting an objects position using
+   homogeneous coordinates, but performing the transformations with
+   homogeneous coordinates greatly reduces the risk of error.
+
+** Task motion -- driving the screw
+   Once the screw is in place, the screw driving motion is performed to
+   keep it stationary at the block while the screwdriver is
+   retrieved. The screw driving motion pattern consists of a rotation of
+   the end effector about its axis by 60 degrees, an ungrasping event,
+   derotating the end effector 120 degrees (for a net -60 degrees away
+   from the zero point), regrasping, and repeating as necessary.
+
+   A similar motion pattern is used when the screwdriver is in use,
+   though with a significant offset to compensate for the longer
+   tool. Though currently unimplemented, a second modification to the
+   motion pattern when the tool is in use is a motion away from the tool
+   during the derotation rather than an ungrasping and regrasping motion
+   that leaves the tool suspended in midair.
 
 * Experiments
+** Analysis
 
-* Analysis
-
-* Discussion
+** Discussion
