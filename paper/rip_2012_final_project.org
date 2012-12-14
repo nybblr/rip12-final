@@ -265,7 +265,7 @@ actuators [label="Actuators (motors)"];
     \ref{ eq:rate_trajectory}, where \(\mathbf{V_e}(t)\) is the end
     effector velocity at time \(t\), \(\mathbf{\alpha}\) is the joint
     space position vector describing the current configuration of the
-    robot, and \(\textbf{\dot{\alpha}}\) is the joint space velocity
+    robot, and \(\mathbf{\dot{\alpha}} \) is the joint space velocity
     vector.
 
     \begin{equation}
@@ -452,7 +452,7 @@ actuators [label="Actuators (motors)"];
    though with a significant offset to compensate for the longer
    tool. Though currently unimplemented, a second modification to the
    motion pattern when the tool is in use is a motion away from the tool
-   during the anti-rotation rather than an release and re-grasp motion
+   during the anti-rotation rather than a release and re-grasp motion
    that leaves the tool suspended in midair.
 
 * Experiments
@@ -471,7 +471,7 @@ actuators [label="Actuators (motors)"];
   #+CAPTION: Failure mode without joint limits
   #+LABEL:      fig:nojoints
   #+ATTR_LaTeX: width=8cm
-  [[./img/VideoGrab1]]
+  [[./img/VideoGrab1.jpg]]
 
   At first we believed this to be a result of the objects being placed
   outide of the end effector's range of motion, but when the orientation
@@ -486,19 +486,19 @@ actuators [label="Actuators (motors)"];
   through its joint limits. This resulted in similar behavior as the
   previous figure depicted, and was prevalent enough that it still
   prevented us from completing the entire manipulation
-  procedure. Further research yielded the technique dicussed in [[Joint
-  limit avoidance]]. Implementation took quite a lot of further iteration,
-  but when the necessary modifications had been made we activated the
-  path finding routine again and found the arm contorting worse than
-  before, as shown in figure \ref{fig:scaryjoints}. This behavior was
-  caused by an inversion of the gradient values for the secondary
-  objective, which effectively caused the arm to run as far away from
-  its neutral joint position as possible.
+  procedure. Further research yielded the technique dicussed in section
+  [[Joint limit avoidance]]. Implementation took quite a lot of further
+  iteration, but when the necessary modifications had been made we
+  activated the path finding routine again and found the arm contorting
+  worse than before, as shown in figure \ref{fig:scaryjoints}. This
+  behavior was caused by an inversion of the gradient values for the
+  secondary objective, which effectively caused the arm to run as far
+  away from its neutral joint position as possible.
 
   #+CAPTION: Failure mode with inverted gradient joint limits
   #+LABEL:      fig:scaryjoints
   #+ATTR_LaTeX: width=8cm
-  [[./img/VideoGrab2]]
+  [[./img/VideoGrab2.jpg]]
 
   After fixing this behavior, the workspace controller appears to work
   correctly, but no time remains for the implementation of the high
@@ -506,37 +506,36 @@ actuators [label="Actuators (motors)"];
 
 * Analysis
 ** Completeness
-   The main underlying principle behind our motion planning was
-   Resolved Rate Trajectory control, as described in the [[Methods]]
-   section.  This strategy can never be shown to be complete. It would
-   not be able to find a goal if the start or end configuration was at
-   a singularity. A singularity is any location in the workspace where
-   the Jacobian loses rank. In this case, the pseudo-inverse becomes
-   very large(inverse of a very small number). The algorithm then
-   returns inaccurate joint velocities. This is really just a
-   mathematical problem and is a shortcoming with the planning
-   strategy. Singularities occur when joints are directly aligned and
-   thus generally tend to happen near the boundaries of the
-   workspace. Thus, Jacobian control can not be guaranteed to find a
-   suitable plan if it exists.
+   The main underlying principle behind our motion planning was Resolved
+   Rate Trajectory control, as described in section [[Methods]].  This
+   strategy can never be shown to be complete. It would not be able to
+   find a goal if the start or end configuration was at a singularity. A
+   singularity is any location in the workspace where the Jacobian loses
+   rank. In this case, the pseudo-inverse becomes very large(inverse of
+   a very small number). The algorithm then returns inaccurate joint
+   velocities. This is really just a mathematical problem and is a
+   shortcoming with the planning strategy. Singularities occur when
+   joints are directly aligned and thus generally tend to happen near
+   the boundaries of the workspace. Thus, Jacobian control can not be
+   guaranteed to find a suitable plan if it exists.
 
 ** Optimality
    Jacobian control can be thought of as optimal in that sense that it
-   follows the desired trajectory arbitrarily closely. It depends on
-   how small of a time step is taken in integrating the differential
-   equation for [alphadot]. This again hinges on the start and end
-   configurations not being singularities. In this case, the Inverse
-   Jacobian method will not find a solution, much less an optimal
-   one. However, if the start and end configuration are safely within
-   the reachable workspace and a specific trajectory is necessary, this
-   method can be very useful.
+   follows the desired trajectory arbitrarily closely. It depends on how
+   small of a time step is taken in integrating the differential
+   equation for \(\mathbf{\dot{\alpha}}\). This again hinges on the
+   start and end configurations not being singularities. In this case,
+   the Inverse Jacobian method will not find a solution, much less an
+   optimal one. However, if the start and end configuration are safely
+   within the reachable workspace and a specific trajectory is
+   necessary, this method can be very useful.
 
 ** Efficiency
 
    Jacobian control is quite efficient in time and space. In both of
    these parameters, complexity is linear to the length of the desired
    path. The most time and space consuming part is the inverse of the
-   Jacobian. In our cases, this always takes the same amount of time
+   Jacobian. In our case, this always takes the same amount of time
    because the size of the Jacobian is always 6x7. For more degree of
    freedom arms, the Jacobian would have more columns, but never so
    many that the computation of the inverse becomes problematic.
