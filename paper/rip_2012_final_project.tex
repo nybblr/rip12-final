@@ -1,4 +1,4 @@
-% Created 2012-12-13 Thu 21:39
+% Created 2012-12-13 Thu 22:08
 \documentclass[10pt, conference]{IEEEtran}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -174,12 +174,13 @@ Georgia Tech.
   do not wish for the robot to deviate from our desired trajectory for
   risk of collision with the workpiece or losing control of the tool.
 
-  Paul reviewed kinematic equations for simple manipulators like the
-  one used here and explained how to determine the Jacobian for these
-  manipulators.\cite{paul} Whitney investigated resolved rate trajectory planning
-  and applied it to control manipulators under task constraints.\cite{whitney} Cheah
-  described how Approximate Inverse Jacobian control could be used in
-  dynamic environments to provide workspace control.\cite{cheah}
+  Paul reviewed kinematic equations for simple manipulators like the one
+  used here and explained how to determine the Jacobian for these
+  manipulators.\cite{paul} Whitney investigated resolved rate trajectory
+  planning and applied it to control manipulators under task
+  constraints.\cite{whitney} Cheah described how Approximate Inverse
+  Jacobian control could be used in dynamic environments to provide
+  workspace control.\cite{cheah}
 \section{Methods}
 \label{sec-3}
 \subsection{Simulation Software}
@@ -316,123 +317,118 @@ Georgia Tech.
     joint angles of the manipulator. In this case, the trajectory is to
     be linear, so \(\mathbf{V_e(t)}\) was a constant \(6 \times 1\) vector equal
     to \(\mathbf{x_f}-\mathbf{x_i}\).
-\begin{itemize}
+\subsubsection{Extracting a target coordinate}
+\label{sec-3-4-2}
 
-\item Extracting a target coordinate\\
-\label{sec-3-4-1-1}%
-The world coordinate of a given node is generated from DART/GRIP as
-     an affine transformation described by the \(4 \times 4\)
-     homogeneous coordinate matrix \(C = \begin{bmatrix}
-     \multicolumn{3}{c}{\mathbf{R}} & \mathbf{X_{xyz}} \\ 0 & 0 & 0 & 1 \end{bmatrix}\),
-     so the \(6 \times 1\) XYZRPY vector representation must first be
-     extracted.
+    The world coordinate of a given node is generated from DART/GRIP as
+    an affine transformation described by the \(4 \times 4\)
+    homogeneous coordinate matrix \(C = \begin{bmatrix}
+    \multicolumn{3}{c}{\mathbf{R}} & \mathbf{X_{xyz}} \\ 0 & 0 & 0 & 1 \end{bmatrix}\),
+    so the \(6 \times 1\) XYZRPY vector representation must first be
+    extracted.
 
-     \(\mathbf{X_{xyz}}\) is a \(3 \times 1\) vector describing a point in
-     3-space, and does not require any manipulation. \(\mathbf{R}\) is a \(3
-     \times 3\) rotation matrix, so we convert this to roll-pitch-yaw as
-     shown in equation \ref{eq:rpy}:
+    \(\mathbf{X_{xyz}}\) is a \(3 \times 1\) vector describing a point in
+    3-space, and does not require any manipulation. \(\mathbf{R}\) is a \(3
+    \times 3\) rotation matrix, so we convert this to roll-pitch-yaw as
+    shown in equation \ref{eq:rpy}:
 
-     \begin{equation}
-     \label{eq:rpy}
-     \mathbf{X_{rpy}} = \begin{bmatrix} \tan^{-1}(\frac{R_{2,1}}{R_{2,2}}) \\
-     -\sin^{-1}(R_{2,0}) \\ \tan^{-1}(\frac{R_{1,0}}{R_{0,0}}) \end{bmatrix},
-     \end{equation}
+    \begin{equation}
+    \label{eq:rpy}
+    \mathbf{X_{rpy}} = \begin{bmatrix} \tan^{-1}(\frac{R_{2,1}}{R_{2,2}}) \\
+    -\sin^{-1}(R_{2,0}) \\ \tan^{-1}(\frac{R_{1,0}}{R_{0,0}}) \end{bmatrix},
+    \end{equation}
 
-     This yields our target coordinates \(\mathbf{x_{f}}
-     = \begin{bmatrix}X_{xyz} \\ X_{rpy} \end{bmatrix} \).
+    This yields our target coordinates \(\mathbf{x_{f}}
+    = \begin{bmatrix}X_{xyz} \\ X_{rpy} \end{bmatrix} \).
+\subsubsection{Inverting the Jacobian}
+\label{sec-3-4-3}
 
+    A direct inverse of the Jacobian is not possible in our case, as
+    our manipulator had 7 degrees of freedom producing a \(7 \times 6\)
+    matrix. Instead, a Moore-Penrose pseudo-inverse was calculated
+    according to equation \ref{eq:pseudoinv}.
 
-\item Inverting the Jacobian\\
-\label{sec-3-4-1-2}%
-A direct inverse of the Jacobian is not possible in our case, as
-     our manipulator had 7 degrees of freedom producing a \(7 \times 6\)
-     matrix. Instead, a Moore-Penrose pseudo-inverse was calculated
-     according to equation \ref{eq:pseudoinv}.
+    \begin{equation}
+    \label{eq:pseudoinv}
+    J(\alpha)^{\dagger} = J(\alpha)^{\top}(J(\alpha)J(\alpha)^{\top})^{-1}
+    \end{equation}
 
-     \begin{equation}
-     \label{eq:pseudoinv}
-     J(\alpha)^{\dagger} = J(\alpha)^{\top}(J(\alpha)J(\alpha)^{\top})^{-1}
-     \end{equation}
+    From this we compute for each time step the change in joint angles
+    via equation \ref{eq:velocity}:
 
-     From this we compute for each time step the change in joint angles
-     via equation \ref{eq:velocity}:
+    \begin{equation}
+    \label{eq:velocity}
+    \dot{\alpha} = J(\alpha)^{\dagger}V_e(t)
+    \end{equation}
 
-     \begin{equation}
-     \label{eq:velocity}
-     \dot{\alpha} = J(\alpha)^{\dagger}V_e(t)
-     \end{equation}
+    This is added to the previous time step's joint configuration and
+    the robot is updated. The process continues until the global
+    coordinates (both rotation and translation) of the end effector
+    of the manipulator is less than a threshold distance $\epsilon$
+    of the desired position. In other words,
 
-     This is added to the previous time step's joint configuration and
-     the robot is updated. The process continues until the global
-     coordinates (both rotation and translation) of the end effector
-     of the manipulator is less than a threshold distance $\epsilon$
-     of the desired position. In other words,
+    \begin{equation}
+    \label{eq:distance}
+    \| \mathbf{x_f - x_i} \| < \epsilon
+    \end{equation}
+\subsubsection{Joint limit avoidance}
+\label{sec-3-4-4}
 
-     \begin{equation}
-     \label{eq:distance}
-     \| \mathbf{x_f - x_i} \| < \epsilon
-     \end{equation}
+    This equation for the joint velocities is not always well
+    behaved. In order to improve the results, we will use a variation
+    of the joint-limits avoidance strategy described in
+    \cite{luc_baron}.
 
+    We now know from \ref{eq:velocity} the regular form of our
+    velocity equation used to generate a trajectory toward our primary
+    task. We will now augment that with an additional secondary task
+    that will bias the trajectory towards keeping the joints as close
+    to their zero points as possible.
 
-\item Joint limits\\
-\label{sec-3-4-1-3}%
-This equation for the joint velocities is not always well
-     behaved. In order to improve the results, we will use a variation
-     of the joint-limits avoidance strategy described in
-     \cite{luc_baron}.
+    First, we augment equation \ref{eq:velocity}, so our equation
+    describing the change in joint angles is now \ref{eq:vel_jl}.
 
-     We now know from \ref{eq:velocity} the regular form of our
-     velocity equation used to generate a trajectory toward our primary
-     task. We will now augment that with an additional secondary task
-     that will bias the trajectory towards keeping the joints as close
-     to their zero points as possible.
+    \begin{equation}
+    \label{eq:vel_jl}
+    \mathbf{\dot{\alpha} = J(\alpha)^{\dagger}V_e(t) + (1 -
+    J(\alpha)^{\dagger}J(\alpha))h}
+    \end{equation}
 
-     First, we augment equation \ref{eq:velocity}, so our equation
-     describing the change in joint angles is now \ref{eq:vel_jl}.
+    The vector \(h\) is our secondary task, multiplied by \(\mathbf{
+    (1 - J(\alpha)^{\dagger}J(\alpha))}\), the orthogonal complement
+    of J($\alpha$). The result is a projection of \(\mathbf{h}\) into
+    the null space of \(\mathbf{J(\alpha)}\), a ``virtual motion'' which
+    results in a bias toward the secondary objective.
 
-     \begin{equation}
-     \label{eq:vel_jl}
-     \mathbf{\dot{\alpha} = J(\alpha)^{\dagger}V_e(t) + (1 -
-     J(\alpha)^{\dagger}J(\alpha))h}
-     \end{equation}
+    The secondary task is constructed as  \(\mathbf{h} = \nabla z\),
+    where \(z\) is a fitness function described in \ref{eq:z}.
 
-     The vector \(h\) is our secondary task, multiplied by \(\mathbf{
-     (1 - J(\alpha)^{\dagger}J(\alpha))}\), the orthogonal complement
-     of J($\alpha$). The result is a projection of \(\mathbf{h}\) into
-     the null space of \(\mathbf{J(\alpha)}\), a ``virtual motion'' which
-     results in a bias toward the secondary objective.
+    \begin{equation}
+    \label{eq:z}
+    \mathbf{ z = \frac{1}{2}(\alpha - \bar{\alpha})^{\top}W(\alpha -
+    \bar{\alpha})}
+    \end{equation}
 
-     The secondary task is constructed as  \(\mathbf{h} = \nabla z\),
-     where \(z\) is a fitness function described in \ref{eq:z}.
+    The variable \(\mathbf{\bar{\alpha}}\) is the joint position vector
+    describing the mid-joint position; in our case, this is an all-zero
+    vector, as the entire arm is constructed from symmetrically
+    revolute joints centered around zero.
 
-     \begin{equation}
-     \label{eq:z}
-     \mathbf{ z = \frac{1}{2}(\alpha - \bar{\alpha})^{\top}W(\alpha -
-     \bar{\alpha})}
-     \end{equation}
+    The matrix \( \mathbf{W} \) is a diagonal weight matrix describing
+    the acceptable deviation from this zero point -- if it ;is desirable
+    for a particular joint to have a greater latitude during movement
+    than another, altering the corresponding row in the weight matrix
+    will generate that effect. In our case, an identity matrix was
+    used, as we only needed a general bias away from the joint limits.
 
-     The variable \(\mathbf{\bar{\alpha}}\) is the joint position vector
-     describing the mid-joint position; in our case, this is an all-zero
-     vector, as the entire arm is constructed from symmetrically
-     revolute joints centered around zero.
-
-     The matrix \( \mathbf{W} \) is a diagonal weight matrix describing
-     the acceptable deviation from this zero point -- if it ;is desirable
-     for a particular joint to have a greater latitude during movement
-     than another, altering the corresponding row in the weight matrix
-     will generate that effect. In our case, an identity matrix was
-     used, as we only needed a general bias away from the joint limits.
-
-     The effect is that \(\mathbf{h}\) describes a gradient where the
-     zero positions on each joint is a minima, growing steeper as you
-     progress further away from this center point. When projected into
-     the null space of \(\mathbf{J_\alpha}\), it will cause joints that
-     are otherwise unconstrained by the target motion to descend toward
-     their zero positions, preventing the robot from approaching too
-     close to the joint limits and preventing some of the anomalous
-     behavior produced by unconstrained inverse Jacobian control.
-
-\end{itemize} % ends low level
+    The effect is that \(\mathbf{h}\) describes a gradient where the
+    zero positions on each joint is a minima, growing steeper as you
+    progress further away from this center point. When projected into
+    the null space of \(\mathbf{J_\alpha}\), it will cause joints that
+    are otherwise unconstrained by the target motion to descend toward
+    their zero positions, preventing the robot from approaching too
+    close to the joint limits and preventing some of the anomalous
+    behavior produced by unconstrained inverse Jacobian control.
 \subsection{Object manipulation}
 \label{sec-3-5}
 
@@ -497,6 +493,47 @@ This equation for the joint velocities is not always well
    that leaves the tool suspended in midair.
 \section{Experiments}
 \label{sec-4}
+
+  We were unable to perform any rigorous experimentation due to the
+  broken inverse Jacobian workspace controller. However, during our
+  attempts to debug the controller and lower motion planning, we did
+  observe some extremely interesting behaviors in the failures produced
+  by the inverse Jacobian controller producing bad output.
+
+  The first problem we developed appeared after adding Roll, Pitch, and Yaw to
+  the target coordinates. If the target coordinates was near the outside
+  of the arm's range of motion, it would attempt to drive its joints
+  past their theoretical limits -- opening up the inspection tab in GRIP
+  showed occasional joint rotations in excess of \textpm{} 4000 degrees, and
+  typical rotations of at least \textpm{} 200 on the primary joints. Figure \ref{fig:nojoints}
+  \href{file://../img/VideoGrab1}{./img/VideoGrab1}
+
+  At first we believed this to be a result of the objects being placed
+  outide of the end effector's range of motion, but when the orientation
+  constraint was relaxed the controller would correctly find a solution
+  in just the X,Y,Z axes. This is the point at which we relaxed the
+  threshold for a correct solution, and our results improved
+  significantly.
+
+  However, after a more complicated set of motions the arm would
+  occasionally contort itself into a configuration that caused it to
+  detect the shortest path to the destination coordinate to take it
+  through its joint limits. This resulted in similar behavior as the
+  previous figure depicted, and was prevalent enough that it still
+  prevented us from completing the entire manipulation
+  procedure. Further research yielded the technique dicussed in \ref{sec-3-4-4}. Implementation took quite a lot of further iteration,
+  but when the necessary modifications had been made we activated the
+  path finding routine again and found the arm contorting worse than
+  before, as shown in figure \ref{fig:scaryjoints}. This behavior was
+  caused by an inversion of the gradient values for the secondary
+  objective, which effectively caused the arm to run as far away from
+  its neutral joint position as possible.
+
+  \href{file://../img/VideoGrab2}{./img/VideoGrab2}
+
+  After fixing this behavior, the workspace controller appears to work
+  correctly, but no time remains for the implementation of the high
+  level planner to permit further experimentation.
 \section{Analysis}
 \label{sec-5}
 \subsection{Completeness}
