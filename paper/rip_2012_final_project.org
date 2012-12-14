@@ -402,18 +402,23 @@ actuators [label="Actuators (motors)"];
    Once the screw is in place, the screw driving motion is performed to
    keep it stationary at the block while the screwdriver is
    retrieved. The screw driving motion pattern consists of a rotation of
-   the end effector about its axis by 60 degrees, an ungrasping event,
-   derotating the end effector 120 degrees (for a net -60 degrees away
-   from the zero point), regrasping, and repeating as necessary.
+   the end effector about its axis by 60 degrees, a release event,
+   anti-rotating the end effector 120 degrees (for a net -60 degrees
+   away from the zero point), re-grasping, and repeating as necessary.
 
    A similar motion pattern is used when the screwdriver is in use,
    though with a significant offset to compensate for the longer
    tool. Though currently unimplemented, a second modification to the
    motion pattern when the tool is in use is a motion away from the tool
-   during the derotation rather than an ungrasping and regrasping motion
+   during the anti-rotation rather than an release and re-grasp motion
    that leaves the tool suspended in midair.
 
 * Experiments
 ** Analysis
 
 ** Discussion
+   Driving a screw seemed like a reasonable task for a first experiment
+   with constrained tool use with anthropocentric tools, since such a
+   task is easy to decompose into a subset of simple goals. General tool
+   planning is a hard problem with a very high computational complexity;
+   by breaking down the problem into highly s
