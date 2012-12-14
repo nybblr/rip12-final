@@ -121,7 +121,7 @@ actuators [label="Actuators (motors)"];
   manually traversed by a human in order for the simulation to
   work. These issues will be further discussed in later sections.
 
-* Related Work TODO
+* Related Work
   Tool manipulation in workspace is very common in both research and
   industry. However, most of this tool manipulation is with specialized
   tools that are not designed for human manipulation, and the robots are
@@ -143,70 +143,112 @@ actuators [label="Actuators (motors)"];
   screw, placing it in the correct location for tool use, finding the
   tool, and finally driving the screw into the target block.
 
-  [Tucker]
-  [general grasp]
+  Our chosen method of control is Resolved Rate Trajectory Planning,
+  also known as pseudo-inverse Jacobian control. The principles behind
+  Resolved Rate Trajectory Planning are well known in controls
+  circles. The theory behind the implementation is not extremely
+  complicated, making it an ideal method for workspace control of
+  high-dimensional robots.\cite{survey_ik} The fact that it is a
+  trajectory-following techinque makes it critical to our work, since we
+  do not wish for the robot to deviate from our desired trajectory for
+  risk of collision with the workpiece or losing control of the tool.
+
+  Paul reviewed kinematic equations for simple manipulators like the
+  one used here and explained how to determine the Jacobian for these
+  manipulators.\cite{paul} Whitney investigated resolved rate trajectory planning
+  and applied it to control manipulators under task constraints.\cite{whitney} Cheah
+  described how Approximate Inverse Jacobian control could be used in
+  dynamic environments to provide workspace control.\cite{cheah}
 
 
 * Methods
-** Simulation Software TODO
+** Simulation Software
+   This project used the DART/GRIP visualization system developed by the
+   Golems lab at the Georgia Tech center for Research in Intelligent
+   Machines. It is especially developed for testing algorithms on rigid
+   body manipulators. Although the work was meant to be used on a mobile
+   robot, it is reasonable to assume that in the tool use domain, the
+   mobile manipulator would be stationary and the work would be done by
+   a 7 DOF arm.
 
-  In the current experiments, there are three interactive objects and
-  one robot arm. The interactive objects are a screwdriver, a bolt, and
-  a goal block, all located within the arm's range of movement.
+   In DART/GRIP, the world is made up of objects and robots. Aside from
+   a model, each object is described by its x,y, and z coordinate and
+   made of links and revolute joints. The angle of each joint can be
+   its rotation about the x,y, and z axis (roll, pitch, yaw). Robots are
+   modified in the world inspector, and the change would automatically
+   be reflected on the configurations of all the following links.
 
-  Our system then follows the following set of actions to generate a
-  plan.
+   This visualization software was chosen because it was optimized for
+   manipulator motion, because it was already somewhat familiar to the
+   research team and also because its source code was available in case
+   any changes needed to be made. It is also open source and available
+   to anyone wishing to replicate the results discussed here.
 
-** High Level Planning TODO
+** Objects
+   The manipulator for this project was the Schunk 7 degree of freedom
+   arm with a hand. Although this is strictly a standalone manipulator,
+   it simulated the 7 degrees of freedom and the hand on a potential
+   mobile robot’s arm. The manipulator is shown in Figure \ref{fig:manipulator}.
 
+   #+CAPTION:    Manipulator model
+   #+LABEL:      fig:manipulator
+   #+ATTR_LaTeX: width=8cm
+   [[./img/Manipulator.jpg]]
 
-*** Locate screw
-    After the screw is inserted into the world file, it is passed to the
-    robot as a motion goal point. The robot queries the world to find the
-    object and obtains the transform of the current tool position in the
-    world's coordinate reference frame. The 4x4 affine matrix
-    representing the rotation and translation of the screw is then
-    converted into a 6x1 vector:
-    \begin{equation}
-    q = \begin{bmatrix}
-               	a \\
-               	w
-              \end{bmatrix}
-    \end{equation}
+   The block, screw, and screwdriver were developed in Solidworks and
+   imported into the world. These are shown in one particular
+   configuration in Figure \ref{fig:objects}.
 
-    Here, \(a\) is a three dimensional translation vector and \(w\)
-    is a roll, pitch, and yaw vector relative the world origin which
-    define the origin of the screw.
+   #+CAPTION:    Image capture of simulated environment, with objects.
+   #+LABEL:      fig:objects
+   #+ATTR_LaTeX: width=8cm
+   [[./img/Objects.jpg]]
 
-*** Grasp the screw
-    Jacobian workspace control is used to align the robot's manipulator
-    with the coordinate frame of the screw. After matching rotation and
-    position with the target, the robot grabs the screw. Subsequently,
-    the screw is manipulated as though it were an additional link in the
-    arm.
+** High Level Planning
+   The high level plan for screwing in a bolt is designed as follows:
 
-*** Locate goal
-   3) Move the bolt to alignment with the goal.
+   1) Locate screw - Align the “palm” of the manipulator with the top of
+      the head, such that the plane of palm is parallel to the plane of
+      the bolt head. In our case, the palm had to be slightly above the
+      screw to be able to grasp it. Of course this offset, if necessary,
+      will be dictated by the particular application. (See Figure
+      \ref{fig:screw})
+   2) Grasp the screw - Once the end effector and the bolt are aligned,
+      close the fingers until they touch the screw. In a physical
+      application, one would close the fingers until some force sensor
+      on the fingers returns a certain value. In our case, we simply
+      closed the fingers until a collision was detected. Collision
+      detection was provided by DART/GRIP.
+      #+CAPTION:    Arm locating the screw object.
+      #+LABEL:      fig:screw
+      #+ATTR_LaTeX: width=8cm
+      [[./img/Picking_Up_Bolt.jpg]]
 
-*** Release bolt
+   3) Locate the goal - Once the end effector grasps the screw, move
+      both to the goal configuration. In our case, this was the hole in
+      the block.
+      #+CAPTION:    Arm locating the block.
+      #+LABEL:      fig:block
+      #+ATTR_LaTeX: width=8cm
+      [[./img/Found_Block.jpg]]
+   4) Start screwing the bolt - Just use the arm to screw in the bolt
+      initially so that it stays in place while the screwdriver is
+      retrieved. (See Figure \ref{fig:driver})
+   5) Release the bolt - Leave it inside the whole, stationary.
+   6) Locate the screwdriver - Align the plam of the manipulator with the base of the screwdriver with an offset.
+   7) Grasp the screwdriver
+      #+CAPTION:    Arm wielding the screw driver.
+      #+LABEL:      fig:driver
+      #+ATTR_LaTeX: width=8cm
+      [[./img/Picked_Up_Driver.jpg]]
 
-*** Grasping tool
-    Grasp the screwdriver; updating the end effector after each
-      interaction.
-
-*** Move tool to screw
-    After moving the screwdriver into the bolt, update the arm to include
-      the bolt as well
-
-*** Drive screw into goal point
-    Moving it into the goal position.
-
-*** Release bolt
-   Release the bolt
-
-*** Release tool
-    Replace the screwdriver back to its original position.
-
+   8) Align screwdriver tip with bolt head - Here, there should be no
+      offset between the tip and the bolt head. In a physical
+      application, a force sensor on the hand could be used to determine
+      when the screwdriver tip is making firm contact with the bolt
+      head. In our case, we aligned the screwdriver and the bolt, then
+      moved it closer until a collision was detected.
+   9) Screw in the bolt.
 
 ** Low Level (Motion) Planning
 *** Resolved Rate Trajectory Planning
@@ -214,7 +256,7 @@ actuators [label="Actuators (motors)"];
     control, was used to move the manipulator from a current world
     configuration \( \mathbf{x_i} =
     \colvec{6}{x_i}{y_i}{z_i}{R_i}{P_i}{Y_i} \) to a target goal
-    configuratfon \( \mathbf{x_f} =
+    configuration \( \mathbf{x_f} =
     \colvec{6}{x_f}{y_f}{z_f}{R_f}{P_f}{Y_f}\) in a linear fashion. The
     world coordinates are described as \( 6 \times 1 \) vectors of X,Y,
     and Z positions with corresponding Roll, Pitch and Yaw.
@@ -228,18 +270,18 @@ actuators [label="Actuators (motors)"];
 
     \begin{equation}
     \label{ eq:rate_trajectory}
-    \mathbf{V_{e}}(t)\mathbf{ = J_{\alpha}\dot{\alpha}}
+    \mathbf{V_{e}}(t)\mathbf{ = J(\alpha)\dot{\alpha}}
     \end{equation}
 
     This can be rearranged into \ref{eq:rate_trajectory_inv}.
 
     \begin{equation}
     \label{eq:rate_trajectory_inv}
-    \mathbf{\dot{\alpha} = J^{-1}V_e(t)}.
+    \mathbf{\dot{\alpha} = J(\alpha)^{-1}V_e(t)}.
     \end{equation}
 
     Thus, if the inverse Jacobian and desired end effector trajectory
-    are know, it is possible to make a differential equation for the
+    are known, it is possible to make a differential equation for the
     joint angles of the manipulator. In this case, the trajectory is to
     be linear, so \(\mathbf{V_e(t)}\) was a constant \(6 \times 1\) vector equal
     to \(\mathbf{x_f}-\mathbf{x_i}\).
@@ -274,7 +316,7 @@ actuators [label="Actuators (motors)"];
 
      \begin{equation}
      \label{eq:pseudoinv}
-     J^{\dagger} = J^{\top}(JJ^{\top})^{-1}
+     J(\alpha)^{\dagger} = J(\alpha)^{\top}(J(\alpha)J(\alpha)^{\top})^{-1}
      \end{equation}
 
      From this we compute for each time step the change in joint angles
@@ -282,7 +324,7 @@ actuators [label="Actuators (motors)"];
 
      \begin{equation}
      \label{eq:velocity}
-     \dot{\alpha} = J_{\alpha}^{\dagger}V_e(t)
+     \dot{\alpha} = J(\alpha)^{\dagger}V_e(t)
      \end{equation}
 
      This is added to the previous time step's joint configuration and
@@ -313,17 +355,17 @@ actuators [label="Actuators (motors)"];
 
      \begin{equation}
      \label{eq:vel_jl}
-     \mathbf{\dot{\alpha} = J_{\alpha}^{\dagger}V_e(t) + (1 -
-     J_{\alpha}^{\dagger}J_{\alpha})h}
+     \mathbf{\dot{\alpha} = J(\alpha)^{\dagger}V_e(t) + (1 -
+     J(\alpha)^{\dagger}J(\alpha))h}
      \end{equation}
 
      The vector \(h\) is our secondary task, multiplied by \(\mathbf{
-     (1 - J_{\alpha}^{\dagger}J_{\alpha})}\), the orthogonal complement
-     of J_{\alpha}. The result is a projection of \(\mathbf{h}\) into
-     the null space of \(\mathbf{J_\alpha}\), a "virtual motion" which
+     (1 - J(\alpha)^{\dagger}J(\alpha))}\), the orthogonal complement
+     of J(\alpha). The result is a projection of \(\mathbf{h}\) into
+     the null space of \(\mathbf{J(\alpha)}\), a "virtual motion" which
      results in a bias toward the secondary objective.
 
-     The secondary task is constructed as  \(\mathbf{h} = \gradient z\),
+     The secondary task is constructed as  \(\mathbf{h} = \nabla z\),
      where \(z\) is a fitness function described in \ref{eq:z}.
 
      \begin{equation}
@@ -414,11 +456,139 @@ actuators [label="Actuators (motors)"];
    that leaves the tool suspended in midair.
 
 * Experiments
-** Analysis
+* Analysis
+** Completeness
+   The main underlying principle behind our motion planning was
+   Resolved Rate Trajectory control, as described in the [[Methods]]
+   section.  This strategy can never be shown to be complete. It would
+   not be able to find a goal if the start or end configuration was at
+   a singularity. A singularity is any location in the workspace where
+   the Jacobian loses rank. In this case, the pseudo-inverse becomes
+   very large(inverse of a very small number). The algorithm then
+   returns inaccurate joint velocities. This is really just a
+   mathematical problem and is a shortcoming with the planning
+   strategy. Singularities occur when joints are directly aligned and
+   thus generally tend to happen near the boundaries of the
+   workspace. Thus, Jacobian control can not be guaranteed to find a
+   suitable plan if it exists.
 
-** Discussion
+** Optimality
+   Jacobian control can be thought of as optimal in that sense that it
+   follows the desired trajectory arbitrarily closely. It depends on
+   how small of a time step is taken in integrating the differential
+   equation for [alphadot]. This again hinges on the start and end
+   configurations not being singularities. In this case, the Inverse
+   Jacobian method will not find a solution, much less an optimal
+   one. However, if the start and end configuration are safely within
+   the reachable workspace and a specific trajectory is necessary, this
+   method can be very useful.
+
+** Efficiency
+
+   Jacobian control is quite efficient in time and space. In both of
+   these parameters, complexity is linear to the length of the desired
+   path. The most time and space consuming part is the inverse of the
+   Jacobian. In our cases, this always takes the same amount of time
+   because the size of the Jacobian is always 6x7. For more degree of
+   freedom arms, the Jacobian would have more columns, but never so
+   many that the computation of the inverse becomes problematic.
+
+** Summary
+
+   Overall, the algorithms used were chosen for efficiency instead of
+   optimality and completeness. In practice, true optimality is rarely
+   a high priority — “second best” plans are usually good enough, often
+   with a large enough gain in speed for real time applications. For
+   our particular application, optimality was a low priority and thus
+   the Jacobian method was deemed sufficient. It’s also worth noting
+   that this method is relatively easy to implement compared to other
+   algorithms accomplishing the same thing. No inverse kinematics are
+   required and the only lengthy part as far as setup is the synthesis
+   of the Jacobian.
+
+* Discussion
    Driving a screw seemed like a reasonable task for a first experiment
    with constrained tool use with anthropocentric tools, since such a
    task is easy to decompose into a subset of simple goals. General tool
    planning is a hard problem with a very high computational complexity;
-   by breaking down the problem into highly s
+   by breaking down the problem into highly specialized subgoals, we
+   drastically reduce the scope of the problem, but also make solutions
+   inapplicable to other tool problems.
+
+   Though we were quick to reduce scope away from the impossible
+   problems, we were unable to correctly estimate the amount of time
+   required to debug our workspace control system.  Without some form of
+   control system, we were left unable to implement the higher level
+   logic to get the desired task-planning behavior. After the
+   demo/presentation, we were able to successfully integrate joint-limit
+   avoidance into the Jacobian control system, which yielded proper
+   low-level motion planning, but did not leave enough time to
+   generalize the motion tasks and implement the high-level planner.
+
+   The inverse kinematics needed to orient tools properly was much more
+   complicated than we expected, especially in an application with such
+   tight constraints on the final position and orientation of the end
+   effector (aligning the screw into the hole correctly). RRTs were
+   sufficient when a start and end \emph{jointspace} configuration is
+   known to generate the desired workspace configuration, but no
+   solution is possible when only the desired end effector position is
+   known without some form of inverse kinematics.
+
+   Our problems with the workspace control system started when we
+   attempted to integrate the Roll, Pitch, and Yaw coordinates into the
+   gradient descent behavior. Augmenting the linear Jacobian with the
+   angular Jacobian (turning it from a \(3 \times \n \) matrix into a
+   \(6 \times n \) matrix) was simple enough, but resulted in very
+   bizarre behaviors. The initial problem was an unclear conversion
+   between degrees and radians, but after that was fixed the behavior
+   still resulted in the robot clipping through itself and the
+   table. With further debugging we noticed that our distance
+   calculation was causing the issues, as the threshold was not large
+   enough to permit an acceptable offset in all six dimensions so the
+   controller would thrash as it approached its solution. This improved
+   performance, but did not solve the fundamental problem.
+
+   We eventually narrowed down the underlying issue to the lack of joint
+   limits. The motion planner would ignore the joint limits and, in
+   searching for the correct joint-space configuration to reach its
+   destination, would contort itself into impossible positions. After
+   this was discovered, the joint-limit avoidance method described by
+   Baron \cite{luc_baron} was implemented and behavior stabilized.
+
+   At this point, the only remaining tasks are the integration of a
+   high-level planner -- easily done by integrating FF or another domain
+   planner into the current decision loop -- and working out the few
+   remaining bugs in the coordinate system (offset from the tools,
+   etc). Given an additional few days to a week, these changes could be
+   easily integrated.
+
+\bibliographystyle{plain}
+\bibliography{rip_2012_final_project}
+
+\clearpage
+\newpage
+\appendix
+
+* Additional Questions
+** How much time did your group spend on this project in total? How much of it has gone to making mistakes, experimenting, etc. as opposed to direct implementation? Reflect.
+   We estimate we spent around 60 hours on this project. Much of the
+   time was spent trying to understand the inner workings of
+   DART/GRIP. There were a couple small bugs that took a lot of time to
+   figure out. Another issue was that we didn’t quite realize the
+   limitation of the inverse Jacobian approach and we spent a lot of
+   time trying to figure out why the plans were misbehaving, when the
+   whole time it was because of singularities. Another issue was
+   understand how to extract RPY information of the end effector. We
+   weren’t sure how the transform matrix was calculated so it was
+   difficult to extract RPY from it.
+** How much time do you think it would take to complete your initial goal?
+   The initial goal was what we actually implemented plus a high level
+   planner that would decide order of operations and so on. This would
+   have involved putting the domain into PDDL, using one of the planners
+   attempted earlier in the semester, and then integrating this with
+   DART/GRIP. This is theoretically simple but the details may have
+   taken another 40 hours or so.
+** Given what you have completed and comparing your work with other groups', what grade do you think you should receive?
+   Some groups had significantly more impressive results, but this may
+   have been partially aided by their own work previously done for
+   another objective. Overall, we think we deserve around a B.
