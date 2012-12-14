@@ -493,7 +493,7 @@ This equation for the joint velocities is not always well
    though with a significant offset to compensate for the longer
    tool. Though currently unimplemented, a second modification to the
    motion pattern when the tool is in use is a motion away from the tool
-   during the anti-rotation rather than an release and re-grasp motion
+   during the anti-rotation rather than a release and re-grasp motion
    that leaves the tool suspended in midair.
 \section{Experiments}
 \label{sec-4}
@@ -503,8 +503,8 @@ This equation for the joint velocities is not always well
 \label{sec-5-1}
 
    The main underlying principle behind our motion planning was
-   Resolved Rate Trajectory control, as described in the \ref{sec-3}
-   section.  This strategy can never be shown to be complete. It would
+   Resolved Rate Trajectory control, as described in section \ref{sec-3}.  
+   This strategy can never be shown to be complete. It would
    not be able to find a goal if the start or end configuration was at
    a singularity. A singularity is any location in the workspace where
    the Jacobian loses rank. In this case, the pseudo-inverse becomes
@@ -521,7 +521,7 @@ This equation for the joint velocities is not always well
    Jacobian control can be thought of as optimal in that sense that it
    follows the desired trajectory arbitrarily closely. It depends on
    how small of a time step is taken in integrating the differential
-   equation for [alphadot]. This again hinges on the start and end
+   equation for \mathbf{\dot{\alpha}}. This again hinges on the start and end
    configurations not being singularities. In this case, the Inverse
    Jacobian method will not find a solution, much less an optimal
    one. However, if the start and end configuration are safely within
