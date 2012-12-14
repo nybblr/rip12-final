@@ -260,7 +260,7 @@ Georgia Tech.
 
     \begin{equation}
     \label{ eq:rate_trajectory}
-    \mathbf{V_{e}}(t)\mathbf{ = J_{\alpha}\dot{\alpha}}
+    \mathbf{V_{e}}(t)\mathbf{ = J(\alpha)\dot{\alpha}}
     \end{equation}
 
     This can be rearranged into \ref{eq:rate_trajectory_inv}.
@@ -271,7 +271,7 @@ Georgia Tech.
     \end{equation}
 
     Thus, if the inverse Jacobian and desired end effector trajectory
-    are know, it is possible to make a differential equation for the
+    are known, it is possible to make a differential equation for the
     joint angles of the manipulator. In this case, the trajectory is to
     be linear, so \(\mathbf{V_e(t)}\) was a constant \(6 \times 1\) vector equal
     to \(\mathbf{x_f}-\mathbf{x_i}\).
@@ -318,7 +318,7 @@ A direct inverse of the Jacobian is not possible in our case, as
 
      \begin{equation}
      \label{eq:velocity}
-     \dot{\alpha} = J_{\alpha}^{\dagger}V_e(t)
+     \dot{\alpha} = J(\alpha)^{\dagger}V_e(t)
      \end{equation}
 
      This is added to the previous time step's joint configuration and
